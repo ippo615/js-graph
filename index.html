@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html >
+<head>
+	<meta charset="utf-8">
+	<title>Web Forms</title>
+	<meta name="description" content="Web Forms">
+	<meta name="author" content="Andrew Ippoliti">
+
+	<!-- IN ANDROID BROWSER - enter "about:debug" in the address bar
+	     It should give you some extra options and a 'js console' -->
+
+	<!-- Mobile viewport optimization http://goo.gl/b9SaQ -->
+	<meta name="HandheldFriendly" content="True">
+	<meta name="MobileOptimized" content="320">
+	<meta name="viewport" content="width=320, height=320, user-scalable=no" />
+	
+	<!-- Hide browser chrome (iOS only) -->
+	<meta name="apple-mobile-web-app-capable" content="yes" />	
+	<link rel="stylesheet" href="./styles/default.css" />
+	<style type="text/css">
+	/*.container { min-width: 480px; padding: 0 0.333em;  float: left; }*/
+	*, *:before, *:after { box-sizing: border-box; }
+	*, *:before, *:after { -moz-box-sizing: border-box; }
+	*, *:before, *:after { -webkit-box-sizing: border-box; }
+	@media all and (min-width: 980px){
+		.container { width: 50%; padding: 0 0.333em;  float: left; }
+	}
+	@media all and (min-width: 1600px){
+		.container { width: 33%; padding: 0 0.333em;  float: left; }
+	}
+	canvas {
+		-webkit-box-shadow: 0px 0px 8px 1px #aaaaaa;
+		box-shadow: 0px 0px 8px 1px #aaaaaa;
+	}
+	</style>
+
+	<!--[if IE]><script type="text/javascript" src="lib/excanvas.js"></script><![endif]-->
+
+</head>
+<body style="position: relative;" class="lite">
+	<div id="toast-container"></div>
+	<div class='action-bar'>
+		<h1 id='app-title'>Function Plotter</h1>
+	</div>
+	<div class='main'>
+		<div style="text-align:center">
+			<canvas id="canvasPlot" width="288" height="288" ></canvas>
+		</div>
+
+		<div class='section'>
+			<a class='link-button' href='javascript:doit();' id='button-run'>Plot This!</a>
+		</div>
+
+
+		<form id='config-options' onsubmit='doit();'></form>
+	
+		<div class='section' style='clear:both;'>
+			<a class='link-button' href='pages/about.html'>About</a>
+			<a class='link-button' href='pages/lang-select.html'>Language 语 idioma 言語 Sprache язык 언어</a>
+		</div>
+
+		<h2 id='title-examples'>Examples</h2>
+		<div class='section'>
+		<a class='link-button' href='javascript:ex_ln();'>ln(x)</a>
+		<a class='link-button' href='javascript:ex_poly3();'>pow(x,2)+pow(x,3)</a>
+		<a class='link-button' href='javascript:ex_sqrt();'>sqrt(x)</a>
+		<a class='link-button' href='javascript:ex_noise();'>x*(0.5-random())</a>
+		<a class='link-button' href='javascript:ex_cos();'>cos(x*pi/180)</a>
+		<a class='link-button' href='javascript:ex_sin();'>2*sin(x*pi/180)</a>
+		<a class='link-button' href='javascript:ex_tan();'>tan(x*pi/180)</a>
+		<a class='link-button' href='javascript:ex_acos();'>acos(x)</a>
+		<a class='link-button' href='javascript:ex_asin();'>asin(x)*180/pi</a>
+		<a class='link-button' href='javascript:ex_atan();'>atan(x)*180/pi</a>
+		<a class='link-button' href='javascript:ex_ceil();'>ceil(x)</a>
+		<a class='link-button' href='javascript:ex_floor();'>floor(2*x)</a>
+		<a class='link-button' href='javascript:ex_round();'>2*round(x)</a>
+		</div>
+
+	</div>
+
+	<div class='navigation-bar'>
+	</div>
+
+<!-- Templates for generating input forms --------------------------------- -->
+<script type="text/my-template" id="template-input-text">
+	<div class='input-line'>
+		<label for="in-%id%" id="in-%id%-label" class="multi-line">
+			<div class="primary">%primary%</div>
+			<div class="secondary">%secondary%</div>
+		</label>
+		<input id="in-%id%" type="%type%" placeholder="e.g. %value%" />
+	</div>
+</script>
+<script type="text/my-template" id="template-input-checkbox">
+	<div class='input-line'>
+		<label for="in-%id%" id="in-%id%-label" class="multi-line">
+			<div class="primary">%primary%</div>
+			<div class="secondary">%secondary%</div>
+		</label>
+		<input id="in-%id%" type="%type%" value="%value%" class="checkbox" />
+	</div>
+</script>
+
+<script type="text/my-template" id="template-input-number">
+	<div class='input-line'>
+		<label for="in-%id%" id="in-%id%-label" class="multi-line">
+			<div class="primary">%primary%</div>
+			<div class="secondary">%secondary%</div>
+		</label>
+		<input id="in-%id%" type="%type%" min="%?min%" max="%?max%" step="%?step%" placeholder="e.g. %value%" />
+	</div>
+</script>
+
+<script type="text/my-template" id="template-input-select">
+	<div class='input-line'>
+		<label for="in-%id%" id="in-%id%-label" class="multi-line">
+			<div class="primary">%primary%</div>
+			<div class="secondary">%secondary%</div>
+		</label>
+		<select id="in-%id%">[
+			<option>%options%</option>]
+		</select>
+	</div>
+</script>
+
+<script type="text/my-template" id="template-input-section">
+	<div class="container">
+	<h2>%title%</h2>
+	<div class="section">%content%</div>
+	</div>
+</script>
+
+<script type="text/javascript" src="lib/js-lib-data.js"></script>
+<script type="text/javascript" src="lib/js-lib-forms.js"></script>
+<script type="text/javascript" src="lib/js-lib-generic.js"></script>
+
+<!-- Scripts for this app's input ----------------------------------------- -->
+<script type="text/javascript">
+function parseEquation(eq){
+	// Cheap parser to handle sin -> Math.sin conversions
+	eq = eq.toLowerCase()
+		.replace(/pi/g,'Math.PI')
+		.replace(/\be(?!xp)/g,'Math.E')
+		.replace(/asin|arcsin/g,'Math.asin')
+		.replace(/acos|arccos/g,'Math.acos')
+		.replace(/atan|arctan/g,'Math.atan')
+		.replace(/atan2|arctan2/g,'Math.atan2')
+		.replace(/\bsin\b/g,'Math.sin')
+		.replace(/\bcos\b/g,'Math.cos')
+		.replace(/\btan\b/g,'Math.tan')
+		.replace(/sqrt/g,'Math.sqrt')
+		.replace(/pow/g,'Math.pow')
+		.replace(/exp/g,'Math.exp')
+		.replace(/ln/g,'Math.log')
+		.replace(/ceil|up/g,'Math.ceil')
+		.replace(/floor|down/g,'Math.floor')
+		.replace(/round/g,'Math.round')
+		.replace(/random/g,'Math.random')
+		;
+	
+	// Make function and return it
+	var y;
+	try{
+		eval("y = function(x){ return "+eq+"; };");
+	}catch(e){
+		Toast('Parsing Error',e,'error',6000);
+	}
+	return y; 
+}
+
+var sections = [];
+var section_function, section_data, section_grid, section_window, section_origin;
+
+function make_sections(){
+	section_function = {
+		title: msg['title-function'],
+		form: [
+		{
+			id: 'equationFunction',
+			type: 'text',
+			primary: msg['pri-equation'],
+			secondary: msg['sec-equation'],
+			convert: parseEquation,
+			value: 'sin(x)'
+		}, {
+			id: 'equationColor',
+			type: 'select',
+			primary: msg['pri-color'],
+			secondary: msg['sec-equation-color'],
+			options: [msg['opt-red'],
+				msg['opt-orange'],
+				msg['opt-yellow'],
+				msg['opt-lime'],
+				msg['opt-green'],
+				msg['opt-aqua'],
+				msg['opt-blue'],
+				msg['opt-purple'],
+				msg['opt-brown'],
+				msg['opt-black'],
+				msg['opt-grey'],
+				msg['opt-white'],
+			],
+			value: msg['opt-blue']
+		}, {
+			id: 'equationAlpha',
+			type: 'number',
+			primary: msg['pri-alpha'],
+			secondary: msg['sec-alpha'],
+			min: 0,
+			max: 100,
+			convert: function(value){ return parseFloat(value)/100; },
+			value: '80'
+		} ]
+	};
+	
+	section_data = {
+		title: msg['title-data'],
+		form: [
+		{
+			id: 'dataMinX',
+			type: 'number',
+			primary: msg['pri-x-min'],
+			secondary: msg['sec-x-min'],
+			convert: parseFloat,
+			value: '-1'
+		}, {
+			id: 'dataMaxX',
+			type: 'number',
+			primary: msg['pri-x-max'],
+			secondary: msg['sec-x-max'],
+			convert: parseFloat,
+			value: '1'
+		}, {
+			id: 'dataMinY',
+			type: 'number',
+			primary: msg['pri-y-min'],
+			secondary: msg['sec-y-min'],
+			convert: parseFloat,
+			value: '-1'
+		}, {
+			id: 'dataMaxY',
+			type: 'number',
+			primary: msg['pri-y-max'],
+			secondary: msg['sec-y-max'],
+			convert: parseFloat,
+			value: '1'
+		} ]
+	};
+	
+	section_window = {
+		title: msg['title-window'],
+		form: [
+		{
+			id: 'canvasSizeX',
+			type: 'number',
+			primary: msg['pri-size-x'],
+			secondary: msg['sec-size-x'],
+			min: 32,
+			convert: function(x){ return Math.abs(parseInt(x,10)); },
+			value: '288'
+		}, {
+			id: 'canvasSizeY',
+			type: 'number',
+			primary: msg['pri-size-y'],
+			secondary: msg['sec-size-y'],
+			min: 32,
+			convert: function(x){ return Math.abs(parseInt(x,10)); },
+			value: '288'
+		} ]
+	};
+	
+	section_grid = {
+		title: msg['title-grid'],
+		form: [
+		{
+			id: 'nGridX',
+			type: 'number',
+			primary: msg['pri-grid-x'],
+			secondary: msg['sec-grid-x'],
+			min: 0,
+			convert: function(x){ return Math.abs(parseInt(x,10)); },
+			value: '10'
+		}, {
+			id: 'nGridY',
+			type: 'number',
+			primary: msg['pri-grid-y'],
+			secondary: msg['sec-grid-y'],
+			min: 0,
+			convert: function(x){ return Math.abs(parseInt(x,10)); },
+			value: '10'
+		}, {
+			id: 'gridColor',
+			type: 'select',
+			primary: msg['pri-color'],
+			secondary: msg['sec-grid-color'],
+			options: [msg['opt-red'],
+				msg['opt-orange'],
+				msg['opt-yellow'],
+				msg['opt-lime'],
+				msg['opt-green'],
+				msg['opt-aqua'],
+				msg['opt-blue'],
+				msg['opt-purple'],
+				msg['opt-brown'],
+				msg['opt-black'],
+				msg['opt-grey'],
+				msg['opt-white'],
+			],
+			value: msg['opt-black']
+		}, {
+			id: 'gridAlpha',
+			type: 'number',
+			primary: msg['pri-alpha'],
+			secondary: msg['sec-alpha'],
+			min: 0,
+			max: 100,
+			convert: function(value){ return parseFloat(value)/100; },
+			value: '5'
+		} ]
+	};
+	
+	section_origin = {
+		title: msg['title-origin'],
+		form: [
+		{
+			id: 'originColor',
+			type: 'select',
+			primary: msg['pri-color'],
+			secondary: msg['sec-origin-color'],
+			options: [msg['opt-red'],
+				msg['opt-orange'],
+				msg['opt-yellow'],
+				msg['opt-lime'],
+				msg['opt-green'],
+				msg['opt-aqua'],
+				msg['opt-blue'],
+				msg['opt-purple'],
+				msg['opt-brown'],
+				msg['opt-black'],
+				msg['opt-grey'],
+				msg['opt-white'],
+			],
+			value: msg['opt-black']
+		}, {
+			id: 'originAlpha',
+			type: 'number',
+			primary: msg['pri-alpha'],
+			secondary: msg['sec-alpha'],
+			min: 0,
+			max: 100,
+			convert: function(value){ return parseFloat(value)/100; },
+			value: '60'
+		} ]
+	};
+}
+
+function setup_form(){
+
+	make_sections();
+
+	// Clear the sections array and put add the correct stuff
+	while(sections.length){sections.pop();}
+	sections.push(section_function);
+	sections.push(section_data);
+	sections.push(section_grid);
+	sections.push(section_window);
+	sections.push(section_origin);
+
+	document.getElementById('config-options').innerHTML = make_template_sections('template-input-', sections);
+
+	document.getElementById('app-title').innerHTML = msg['app-title'];
+	document.getElementById('button-run').innerHTML = msg['button-run'];
+	document.getElementById('title-examples').innerHTML = msg['title-examples'];
+}
+
+</script>
+<!-- Plotting and App Code ------------------------------------------------ -->
+<script type="text/javascript">
+function roundTo(num,stepSize){
+	return Math.round(num/stepSize)*stepSize;
+}
+
+function roundToSigFigs(num,nSigFigs){
+	// We can't round 0
+	if( num === 0 ){ return 0; }
+	
+	// Avoid negatives because log of a negative number is a complex number
+	var isNeg = (num < 0);
+	if( isNeg ){
+		num = -num;
+	}
+	
+	// We need to find the power of ten (10^X) that this number is closest to
+	// note: 0.1 = 10^-1 ie numbers < 1, have negative powers
+	var pow = Math.floor(Math.log(num)/Math.LN10);
+	// Then use that power to compute an appropriate spot to round to
+	var to = Math.pow(10, pow - nSigFigs + 1 );
+	
+	// Just round to that power, and correct the negative part
+	if( isNeg ){
+		return -Math.round( num/to )*to;
+	}else{
+		return Math.round( num/to )*to;
+	}
+}
+/*
+console.info(roundToSigFigs(999,1));
+console.info(roundToSigFigs(0.0999,1));
+console.info(roundToSigFigs(0.0988,2));
+console.info(roundToSigFigs(0.0988,2));
+console.info(roundToSigFigs(0.0500,2));
+console.info(roundToSigFigs(0.0520,2));
+console.info(roundToSigFigs(123456,2));
+console.info(roundToSigFigs(123456,3));
+console.info(roundToSigFigs(123456,4));
+console.info(roundToSigFigs(123456,5));
+console.info(roundToSigFigs(123456,6));
+*/
+
+function remap(fromValue,fromMin,fromMax,toMin,toMax){
+
+	// Make sure min is less than max
+	var swap;
+	if( fromMin > fromMax ){ swap = fromMax; fromMin = fromMax; fromMin = swap; }
+	if( toMin > toMax ){ swap = toMax; toMin = toMax; toMin = swap; }
+	
+	// Compute the range of the data
+	var fromRange = fromMax - fromMin;
+	var toRange = toMax - toMin;
+
+	// If either range is 0, then the value can only be mapped to 1 value
+	if( fromRange === 0 ){ return toMin + toRange/2; }
+	if( toRange === 0 ){ return toMin; }
+
+	// (1) untranslate, (2) unscale, (3) rescale, (4) retranslate
+	var toValue = (fromValue - fromMin) / fromRange;
+	toValue = (toRange*toValue) + toMin;
+
+	return toValue;
+}
+// alert( remap( 160, 0,320, 0,10 ) );
+// alert( remap( 160, 0,320, 0,10000 ) );
+// alert( remap( -40, 0,320, 0,10 ) );
+
+
+function plot(canvas,options){
+
+	// For easy reference later
+	var o = options;
+
+	// Resize the canvas 
+	canvas.width = o.canvasSizeX;
+	canvas.height = o.canvasSizeY;
+	
+	// Note that the canvas coordinate system is 0,0 left,top
+	// x increases to the right and y increases down. I use
+	// `o.canvasMaxY-y` to mimic Cartesian Coordinates.
+
+	// Determine region/range in which we will draw
+	o.canvasMinX = 0;
+	o.canvasMinY = 0;
+	o.canvasMaxX = o.canvasSizeX;
+	o.canvasMaxY = o.canvasSizeY;
+	
+	var ctx = canvas.getContext('2d');
+	var cx, dx1, dx2, dy1, dy2;
+
+	ctx.save();
+	ctx.globalAlpha = o.equationAlpha;
+	ctx.strokeStyle = o.equationColor;
+	ctx.strokeSize = 1;
+
+	// Draw one segment per horizontal pixel of the drawing region
+	for( cx=o.canvasMinX; cx<o.canvasMaxX; cx+=1 ){
+		dx1 = remap( cx,   o.canvasMinX,o.canvasMaxX, o.dataMinX,o.dataMaxX );
+		dx2 = remap( cx+1, o.canvasMinX,o.canvasMaxX, o.dataMinX,o.dataMaxX );
+	
+		dy1 = o.equationFunction(dx1);
+		dy2 = o.equationFunction(dx2);
+		
+		ctx.beginPath();
+		ctx.moveTo(cx,  o.canvasMaxY-remap(dy1, o.dataMinY,o.dataMaxY, o.canvasMinY,o.canvasMaxY) );
+		ctx.lineTo(cx+1,o.canvasMaxY-remap(dy2, o.dataMinY,o.dataMaxY, o.canvasMinY,o.canvasMaxY) );
+		ctx.stroke();
+	}
+
+	// Get the grid parameters
+	var gridStepX = (o.dataMaxX - o.dataMinX)/o.nGridX;
+	var gridStepY = (o.dataMaxY - o.dataMinY)/o.nGridY;
+	// Make sure the grid step is only 1 significant digit (ie 100 not 123)
+	gridStepX = roundToSigFigs(gridStepX,1);
+	gridStepY = roundToSigFigs(gridStepY,1);
+	
+	// Draw the grid (vertical lines then horizontal)
+	var i, x, y, mid, xd, yd;
+	ctx.globalAlpha = o.gridAlpha;
+	ctx.strokeStyle = o.gridColor;
+	ctx.strokeSize = 1;
+	ctx.textAlign = 'center';
+	// mid = Math.floor(o.nGridX/2);
+	mid = Math.floor((0 - o.dataMinX) / gridStepX);
+	for( i=0; i<o.nGridX*2; i+=1 ){
+		xd = (i-mid)*gridStepX;
+		x = Math.round( remap( xd, o.dataMinX,o.dataMaxX, o.canvasMinX,o.canvasMaxX ) );
+		ctx.beginPath();
+		ctx.moveTo( x+0.5 , Math.round(o.canvasMinY)+0.5 );
+		ctx.lineTo( x+0.5 , Math.round(o.canvasMaxY)+0.5 );
+		ctx.stroke();
+		// draw every other label:
+		if( i%2 === 1 ){
+			ctx.globalAlpha = 0.5;
+			ctx.fillText(""+xd.toPrecision(2), x+0.5 ,o.canvasMaxY-12.5);
+			ctx.globalAlpha = o.gridAlpha;
+		}
+	}
+	// mid = Math.floor(o.nGridY/2);
+	mid = Math.floor((0 - o.dataMinY) / gridStepY);
+	for( i=0; i<o.nGridY*2; i+=1 ){
+		yd = (i-mid)*gridStepY;
+		y = Math.round( remap( yd, o.dataMinY,o.dataMaxY, o.canvasMinY,o.canvasMaxY ) );
+		ctx.beginPath();
+		ctx.moveTo( Math.round(o.canvasMinX)+0.5, o.canvasMaxY-y+0.5 );
+		ctx.lineTo( Math.round(o.canvasMaxX)+0.5, o.canvasMaxY-y+0.5 );
+		ctx.stroke();
+		if( i%2 === 1 ){
+			ctx.globalAlpha = 0.5;
+			ctx.fillText(""+yd.toPrecision(2), o.canvasMaxX-32.5, o.canvasMaxY-y+0.5);
+			ctx.globalAlpha = o.gridAlpha;
+		}
+	}
+
+	// Get the origin parameters:
+	ctx.globalAlpha = o.originAlpha;
+	ctx.strokeStyle = o.originColor;
+	ctx.strokeSize = 1;
+
+	// The y-axis part 
+	x = Math.round( remap( 0, o.dataMinX,o.dataMaxX, o.canvasMinX,o.canvasMaxX ) )+0.5;
+	ctx.beginPath();
+	ctx.moveTo( x , Math.round(o.canvasMinY)+0.5 );
+	ctx.lineTo( x , Math.round(o.canvasMaxY)+0.5 );
+	ctx.stroke();
+
+	// The x-axis part
+	y = Math.round( remap( 0, o.dataMinY,o.dataMaxY, o.canvasMinY,o.canvasMaxY ) )+0.5;
+	ctx.beginPath();
+	ctx.moveTo( Math.round(o.canvasMinX)+0.5, o.canvasMaxY-y );
+	ctx.lineTo( Math.round(o.canvasMaxX)+0.5, o.canvasMaxY-y );
+	ctx.stroke();
+
+	ctx.restore();
+}
+
+function doit(){
+	var options = read_form_data_sections( sections );
+	document.getElementById('canvasPlot').getContext('2d').clearRect(0,0,9999,9999);
+	
+	try{
+		plot( document.getElementById('canvasPlot'), options );
+	}catch(e){
+		Toast('Plotting Error',e,'error',6000);
+	}
+}
+
+var onPageLoad = function(){
+	setup_form();
+	doit();
+};
+
+onload = function(){
+	//document.refresh();
+	window.location.href += "#";
+	loadTranslation('./lang/',onPageLoad);
+	// Setup the canvas
+	setup_overlay('#canvasPlot');
+};
+
+var setup_overlay = (function(){
+
+	// My lazy excuse for jQuery:
+	function $(id){
+		var element = document.getElementById(id.slice(1,id.length));
+		var self = {}
+		var on = function(eventStr,callback){
+			var events = eventStr.split(' ');
+			var i, l = events.length;
+			for( i=0; i<l; i+=1 ){
+				if( element.attachEvent ){
+					element.attachEvent('on'+events[i], callback);
+				}else{
+					element.addEventListener(events[i], callback, false);
+				}
+			}
+			return self;
+		};
+
+		self.on = on;
+		self.element = element;
+
+		return self;
+	}
+
+	var getPointerPositionsIn = function(e,target){
+	/// Returns an array of {x: y:} objects that represent the x,y
+	/// coordinates of the pointers relative to the top, left corner of the
+	/// target object.
+	/// Example:
+	/// domNode.onclick = function(e){
+	///   var positions = GetPointerPositionsInTarget(e);
+	///   // Code that works with positions..
+	/// }
+	
+		// Note that the target is the 'node on which the event occured'
+		// not the 'node on which the event is registered'. For example:
+		// <div id='parent'><div id='child'>BLAH</div></div>
+		// If you regesiter the event on parent than target could be either
+		// parent or child.
+		var locations = [], // array of x,y pairs (finger locations)
+		    nLocations = 0, // number of locations
+		    nTouches, // number of touches to look through
+		    mx = 0, // mouse position
+		    my = 0,
+		    baseX = 0, // Base object's position
+		    baseY = 0,
+		    baseObj,
+		    i, iLocation, iTouch; // temp for iterating
+	
+		//get the original event (jQury changes e)
+		//e = e.originalEvent;
+		//we need an array of x,y pairs
+		//if this is a touch event
+		if(e.type === "touchstart"
+		|| e.type === "touchmove"
+		|| e.type === "touchend"){
+			nTouches = e.touches.length;
+			for(i=0; i<nTouches; i+= 1){
+				iTouch = e.touches[i];
+				locations[nLocations] = { x: iTouch.pageX, y: iTouch.pageY };
+				nLocations += 1;
+			}
+			//could also use: (i haven't noticed a difference)
+			//t = event.changedTouches[0];
+			//get the mouse coordinates on the page
+		}else{	
+			//if we're actually given the page coordinates
+			if(e.pageX || e.pageY){
+				//use the page coordinates as the mouse coordinates
+				mx = e.pageX;
+				my = e.pageY;
+			}else if(e.clientX || e.clientY){
+				//compute the page corrdinates
+				mx = e.clientX + document.body.scrollLeft +
+					document.documentElement.scrollLeft;
+				my = e.clientY + document.body.scrollTop  +
+					document.documentElement.scrollTop;
+			}
+			locations[nLocations] = { x: mx, y: my };
+			nLocations += 1;
+		}
+		//find the location of the base object
+		baseObj = target;
+		//as long as we haven't added all of the parents' offsets
+		while(baseObj.offsetParent !== null){
+			//add it's offset
+			baseX += parseInt(baseObj.offsetLeft,10);
+			baseY += parseInt(baseObj.offsetTop,10);
+			//get the next parent
+			baseObj = baseObj.offsetParent;
+		}
+		//the mouse position within the target object is:
+		for(i=0; i<nLocations; i+=1){
+			iLocation = locations[i];
+			locations[i].x = iLocation.x - baseX;
+			locations[i].y = iLocation.y - baseY;
+		}
+		return locations;
+	};
+
+	var lastPos = null;
+	var currPos = null;
+	var canvas = null;
+
+	return function(id){
+		canvas = $(id);
+		canvas.on('touchstart mousedown',function(e){
+			lastPos = getPointerPositionsIn(e,canvas.element);
+			currPos = lastPos;
+		}).on('touchmove mousemove',function(e){
+			if( lastPos ){
+				var tmp = lastPos;
+				lastPos = currPos;
+				currPos = getPointerPositionsIn(e,canvas.element);
+	
+				// Only draw a line if it's longer than 5 units
+				//var dx = currPos[0].x - lastPos[0].x;
+				//var dy = currPos[0].y - lastPos[0].y;
+				//if( dx*dx + dy*dy < 32 ){
+				//	currPos = lastPos;
+				//	lastPos = tmp;
+				//	return;
+				//}
+				
+				// Draw this segment
+				var ctx = canvas.element.getContext('2d');
+				ctx.lineWidth = 1;
+				ctx.lineCap = 'round';
+				ctx.beginPath();
+				ctx.moveTo(lastPos[0].x,lastPos[0].y);
+				ctx.lineTo(currPos[0].x,currPos[0].y);
+				ctx.stroke();
+	
+			}
+			if( e.preventDefault ){
+				e.preventDefault();
+			}
+		}).on('touchend mouseup mouseout',function(e){
+			lastPos = null;
+			currPos = lastPos;
+		});
+	};
+})();
+
+
+/*
+function on_zoom(e){
+	var in_dataMinX = document.getElementById('dataMinX'),
+	    in_dataMaxX = document.getElementById('dataMaxX'),
+	    in_dataMinY = document.getElementById('dataMinY'),
+	    in_dataMaxY = document.getElementById('dataMaxY');
+	var dataMinX = parseFloat(in_dataMinX.value),
+	    dataMaxX = parseFloat(in_dataMaxX.value),
+	    dataMinY = parseFloat(in_dataMinY.value),
+	    dataMaxY = parseFloat(in_dataMaxY.value);
+	var dX = dataMaxX - dataMinX,
+	    dY = dataMaxY - dataMinY,
+	    midX = dX / 2,
+	    midY = dY / 2;
+
+	dX /= e.scale;
+	dY /= e.scale;
+
+	in_dataMinX.value = midX - dX;
+	in_dataMaxX.value = midX + dX;
+	in_dataMinY.value = midY - dY;
+	in_dataMaxY.value = midY + dY;
+
+	doIt();
+}
+document.getElementById('canvasPlot').ongestureend = on_zoom;
+
+var gestures = (function(){
+	var x = 0,
+	    y = 0;
+}());
+*/
+
+
+function run_example(equationFunction,equationColor,equationAlpha,dataMinX,dataMaxX,dataMinY,dataMaxY,canvasSizeX,canvasSizeY,nGridX,nGridY,gridColor,gridAlpha,originColor,originAlpha){
+	document.getElementById("in-equationFunction").value = equationFunction;
+	document.getElementById("in-equationColor").value = equationColor;
+	document.getElementById("in-equationAlpha").value = equationAlpha;
+	document.getElementById("in-dataMinX").value = dataMinX;
+	document.getElementById("in-dataMaxX").value = dataMaxX;
+	document.getElementById("in-dataMinY").value = dataMinY;
+	document.getElementById("in-dataMaxY").value = dataMaxY;
+	document.getElementById("in-canvasSizeX").value = canvasSizeX;
+	document.getElementById("in-canvasSizeY").value = canvasSizeY;
+	document.getElementById("in-nGridX").value = nGridX;
+	document.getElementById("in-nGridY").value = nGridY;
+	document.getElementById("in-gridColor").value = gridColor;
+	document.getElementById("in-gridAlpha").value = gridAlpha;
+	document.getElementById("in-originColor").value = originColor;
+	document.getElementById("in-originAlpha").value = originAlpha;
+	doit();
+	window.location.href='#';
+}
+
+function ex_ln(){
+	run_example(
+		'ln(x)','red','90',
+		'-1','10','-4','4',
+		'480','480',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_poly3(){
+	run_example(
+		'pow(x,2)+pow(x,3)','red','90',
+		'-4','4','-4','4',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_sqrt(){
+	run_example(
+		'sqrt(x)','red','90',
+		'-4','81','-2','10',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function ex_noise(){
+	run_example(
+		'x*(0.5-random())','yellow','90',
+		'-2','2','-5','5',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function ex_cos(){
+	run_example(
+		'cos(x*pi/180)','blue','90',
+		'-360','360','-2','2',
+		'960','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_sin(){
+	run_example(
+		'2*sin(x*pi/180)','blue','90',
+		'-360','360','-2','2',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_tan(){
+	run_example(
+		'tan(x*pi/180)','blue','90',
+		'-360','360','-2','2',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_acos(){
+	run_example(
+		'acos(x)','blue','90',
+		'-2','2','-1','4',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_asin(){
+	run_example(
+		'asin(x)*180/pi','blue','90',
+		'-2','2','-100','100',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+function ex_atan(){
+	run_example(
+		'atan(x)*180/pi','blue','90',
+		'-10','10','-100','100',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function ex_ceil(){
+	run_example(
+		'ceil(x)','green','90',
+		'-5','8','-5','8',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function ex_floor(){
+	run_example(
+		'floor(2*x)','green','90',
+		'-5','8','-5','8',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function ex_round(){
+	run_example(
+		'2*round(x)','green','90',
+		'-5','8','-5','8',
+		'288','288',
+		'10','10','black','5',
+		'black','60'
+	);
+}
+
+function Toast(title,message,cssClass,duration){
+	var primary = document.createElement('div');
+	primary.className = "primary";
+	primary.appendChild(document.createTextNode(title));
+	var secondary = document.createElement('div');
+	secondary.className = "secondary";
+	secondary.appendChild(document.createTextNode(message));
+	var box = document.createElement('div');
+	box.className = "toast initial-toast";
+	box.appendChild(primary);
+	box.appendChild(secondary);
+	var container = document.getElementById('toast-container');
+	var top = Math.max(document.documentElement.scrollTop,document.body.scrollTop);
+	container.style.top = top+'px';
+	
+	// Insert this node 'at the top'
+	// IE requires a valid node or null
+	var before = container.childNodes[0];
+	if( container.childNodes.length < 1 ){ before = null; }
+	container.insertBefore(box,before);
+
+	// Trick the browser into animating
+	setTimeout(function(){
+		box.className = "toast "+cssClass;
+	},0);
+	setTimeout(function(){
+		box.style.opacity = 0;
+		setTimeout(function(){
+			document.getElementById('toast-container').removeChild(box);
+			box = null;
+		},400);
+	},duration);
+}
+
+</script>
+</body>
+</html>
