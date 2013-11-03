@@ -128,6 +128,11 @@ function remap(fromValue,fromMin,fromMax,toMin,toMax){
 // alert( remap( -40, 0,320, 0,10 ) );
 
 function plotPartial(options){
+
+	// NOTE: explorer canvas does not support context.getImageData()
+	// This means for compatibilty with <IE9 I need to reimplement this with
+	// lines (one 'line' per pixel) which (my guess) is really slow.
+
 	var xCanvasSize = options.canvas.width;
 	var yCanvasSize = options.canvas.height;
 
@@ -595,7 +600,7 @@ function wrapSelected(node,leftText,rightText){
 		var txt = document.selection.createRange();
 		txt.text = leftText;
 		if(rightText){
-			txt.text += _sel;
+			txt.text += sel;
 			txt.text += rightText;
 		}
 	}else{
