@@ -181,7 +181,7 @@
 				<button class='keypad-btn btn-2-1' id='button-square'>[]</button>
 				<button class='keypad-btn btn-2-2' id='button-curly'>{}</button>
 				<button class='keypad-btn btn-3-0' id='button-backspace'>&#9003;</button>
-				<button class='keypad-btn btn-3-1' id='button-'>-</button>
+				<button class='keypad-btn btn-3-1' id='button-clear'>&#8999;</button>
 				<button class='keypad-btn btn-3-2' id='button-'>-</button>
 			</div>
 			<button class='keypad-tab btn-0-3 active' id='button-numbers'>#</button>
@@ -348,6 +348,10 @@ function setupKeypad(){
 	$('#button-paren').on('click',insertAndSwitch('(',')','numbers'));
 	$('#button-curly').on('click',insertAndSwitch('{','}','numbers'));
 	$('#button-square').on('click',insertAndSwitch('[',']','numbers'));
+
+	$('#button-clear').on('click',function(){
+		activeEquation.value = '';
+	});
 }
 function showEquationEditor(){
 	var $window = $(window);
