@@ -328,37 +328,10 @@ function plotGrid(options){
 
 }
 
-var graph = {
-	colors: [
-		{r:255,g:0,b:0},
-		{r:0,g:255,b:0},
-		{r:0,g:0,b:255},
-		{r:255,g:255,b:0}
-	],
-	functions: [
-		parseEquation('y < sin(x*pi/180)*320'),
-		parseEquation('0'),
-		parseEquation('-y < sin(x*pi/180)*320'),
-		parseEquation('y < x')
-	]
-};
 //console.info( (parseEquation('y=7*x'))(1,7) )
 //console.info( (parseEquation('y=7+x'))(0,7) )
 //console.info( (parseEquation('3*y=x'))(3,1) )
-var graph = {
-	colors: [
-		{r:255,g:0,b:0},
-		{r:0,g:255,b:0},
-		{r:0,g:0,b:255},
-		{r:255,g:255,b:0}
-	],
-	xMin: -10,
-	xMax: 10,
-	yMin: -10,
-	yMax: 10,
-	canvas: $('#canvas-graph')[0],
-	grid: $('#canvas-grid')[0]
-};
+
 function graphMakeSquare(opts){
 	if( opts.xCanvasSize === opts.yCanvasSize ){
 		return opts;

@@ -193,47 +193,6 @@
 	</div>
 <script type="text/javascript" src="script.js" ></script>
 <script type="text/javascript">
-$(window).on('resize',function(){
-	var $window = $(this);
-	var w = $window.width();
-	var h = $window.height();
-
-	// Resize for portrait or landscape
-	var dynamicStyles = "";
-	if( w > h ){
-		// Lanscape
-		dynamicStyles += '.panel { height:'+h+'px;'
-		dynamicStyles += '  width:'+Math.floor(w/2)+'px;}\n';
-		dynamicStyles += '#container { width:'+Math.ceil(w*2)+'px;';
-		dynamicStyles += '  height:'+Math.ceil(h)+'px;}\n';
-		$('#canvas-graph')[0].width = Math.floor(w/2);
-		$('#canvas-graph')[0].height = Math.floor(h);
-		$('#canvas-grid')[0].width = Math.floor(w/2);
-		$('#canvas-grid')[0].height = Math.floor(h);
-		$('#canvas-note')[0].width = Math.floor(w/2);
-		$('#canvas-note')[0].height = Math.floor(h);
-	}else{
-		dynamicStyles += '.panel { width:'+w+'px;'
-		dynamicStyles += '  height:'+Math.floor(h/2)+'px;}\n';
-		dynamicStyles += '#container { width:'+Math.ceil(w)+'px;';
-		dynamicStyles += '  height:'+Math.ceil(h/2*3)+'px;}\n';
-		$('#canvas-graph')[0].width = Math.floor(w);
-		$('#canvas-graph')[0].height = Math.floor(h/2);
-		$('#canvas-grid')[0].width = Math.floor(w);
-		$('#canvas-grid')[0].height = Math.floor(h/2);
-		$('#canvas-note')[0].width = Math.floor(w);
-		$('#canvas-note')[0].height = Math.floor(h/2);
-	}
-	$('#style-dynamic').styleSheet(dynamicStyles);
-
-	// Resize the fonts
-	var body = $('body');
-	body.css({fontSize:(w+h)/1024*48});
-
-	// Redraw the graph
-	redraw();
-}).resize();
-
 function updateFunctions(opts){
 	opts.functions = [
 		parseEquation($('#in-equation-1').val()),
@@ -378,8 +337,6 @@ function redraw(){
 	plotPartial(graph);
 	plotGrid(graph);
 }
-
-var activeEquation = $('#in-equation-1')[0];
 function insertAndSwitch(left,right,keypad){
 	return function(){
 		wrapSelected(activeEquation,left,right);
@@ -392,6 +349,120 @@ function insertAndStay(left,right){
 	return function(){
 		wrapSelected(activeEquation,left,right);
 	};
+}
+
+function showEquationEditor(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:-w/2,top:0});
+	}else{
+		$('#container').css({left:0,top:-h/2});
+	}
+}
+function showGraph(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:0,top:0});
+	}else{
+		$('#container').css({left:0,top:0});
+	}
+	redraw();
+}
+
+function hideAllKeypads(){
+	$('#keypad-operators').removeClass('show').addClass('hide');
+	$('#keypad-logic').removeClass('show').addClass('hide');
+	$('#keypad-functions').removeClass('show').addClass('hide');
+	$('#keypad-numbers').removeClass('show').addClass('hide');
+}
+function clearAllKeypadTabs(){
+	$('#button-operators').removeClass('active');
+	$('#button-logic').removeClass('active');
+	$('#button-functions').removeClass('active');
+	$('#button-numbers').removeClass('active');
+}
+function activateKeypad(name){
+	hideAllKeypads();
+	clearAllKeypadTabs();
+	$('#button-'+name).addClass('active');
+	$('#keypad-'+name).addClass('show').removeClass('hide');
+}
+
+function toggleAnnotation(){
+	$note = $('#canvas-note');
+
+	// If the annotations are hidden:
+	// clear and show the annotation and hide the panning buttons
+	if( $note.hasClass('hide') ){
+		$note[0].width = $note[0].width;
+		$('#btn-pan-up').addClass('hide');
+		$('#btn-pan-down').addClass('hide');
+		$('#btn-pan-left').addClass('hide');
+		$('#btn-pan-right').addClass('hide');
+		$note.removeClass('hide');
+	// Otherwise - hide the annotation and show the panning buttons
+	}else{
+		$note.addClass('hide');
+		$('#btn-pan-up').removeClass('hide');
+		$('#btn-pan-down').removeClass('hide');
+		$('#btn-pan-left').removeClass('hide');
+		$('#btn-pan-right').removeClass('hide');
+		$note.addClass('hide');
+	}
+
+	showGraph();
+}
+
+function editEquation(id){
+	return function(){
+		activeEquation = document.getElementById(id);
+		showEquationEditor();
+	};
+}
+
+function handleResize(){
+	var $window = $(this);
+	var w = $window.width();
+	var h = $window.height();
+
+	// Resize for portrait or landscape
+	var dynamicStyles = "";
+	if( w > h ){
+		// Lanscape
+		dynamicStyles += '.panel { height:'+h+'px;'
+		dynamicStyles += '  width:'+Math.floor(w/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w*2)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w/2);
+		$('#canvas-graph')[0].height = Math.floor(h);
+		$('#canvas-grid')[0].width = Math.floor(w/2);
+		$('#canvas-grid')[0].height = Math.floor(h);
+		$('#canvas-note')[0].width = Math.floor(w/2);
+		$('#canvas-note')[0].height = Math.floor(h);
+	}else{
+		dynamicStyles += '.panel { width:'+w+'px;'
+		dynamicStyles += '  height:'+Math.floor(h/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h/2*3)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w);
+		$('#canvas-graph')[0].height = Math.floor(h/2);
+		$('#canvas-grid')[0].width = Math.floor(w);
+		$('#canvas-grid')[0].height = Math.floor(h/2);
+		$('#canvas-note')[0].width = Math.floor(w);
+		$('#canvas-note')[0].height = Math.floor(h/2);
+	}
+	$('#style-dynamic').styleSheet(dynamicStyles);
+
+	// Resize the fonts
+	var body = $('body');
+	body.css({fontSize:(w+h)/1024*48});
+
+	// Redraw the graph
+	redraw();
 }
 
 function setupKeypad(){
@@ -456,123 +527,26 @@ function setupKeypad(){
 		backspaceSelected(activeEquation);
 	});
 }
-function showEquationEditor(){
-	var $window = $(window);
-	var w = $window.width();
-	var h = $window.height();
-	if( w > h ){
-		$('#container').css({left:-w/2,top:0});
-	}else{
-		$('#container').css({left:0,top:-h/2});
-	}
-}
-function showGraph(){
-	var $window = $(window);
-	var w = $window.width();
-	var h = $window.height();
-	if( w > h ){
-		$('#container').css({left:0,top:0});
-	}else{
-		$('#container').css({left:0,top:0});
-	}
-	redraw();
-}
 
-function hideAllKeypads(){
-	$('#keypad-operators').removeClass('show').addClass('hide');
-	$('#keypad-logic').removeClass('show').addClass('hide');
-	$('#keypad-functions').removeClass('show').addClass('hide');
-	$('#keypad-numbers').removeClass('show').addClass('hide');
-}
-function clearAllKeypadTabs(){
-	$('#button-operators').removeClass('active');
-	$('#button-logic').removeClass('active');
-	$('#button-functions').removeClass('active');
-	$('#button-numbers').removeClass('active');
-}
-function activateKeypad(name){
-	hideAllKeypads();
-	clearAllKeypadTabs();
-	$('#button-'+name).addClass('active');
-	$('#keypad-'+name).addClass('show').removeClass('hide');
-}
+var activeEquation = null;
+var graph = {
+	colors: [
+		{r:255,g:0,b:0},
+		{r:0,g:255,b:0},
+		{r:0,g:0,b:255},
+		{r:255,g:255,b:0}
+	],
+	xMin: -10,
+	xMax: 10,
+	yMin: -10,
+	yMax: 10,
+	canvas: null,
+	grid: null
+};
 
-$('#button-numbers').on('click',function(){
-	activateKeypad('numbers');
-});
-$('#button-functions').on('click',function(){
-	activateKeypad('functions');
-});
-$('#button-logic').on('click',function(){
-	activateKeypad('logic');
-});
-$('#button-operators').on('click',function(){
-	activateKeypad('operators');
-});
-
-$('#canvas-grid').hammer()
-  .on('dragstart',handlePanDragStart)
-  .on('drag',handlePanDragMove)
-  .on('dragend',handlePanDragEnd);
-
-function editEquation(id){
-	return function(){
-		activeEquation = document.getElementById(id);
-		showEquationEditor();
-	};
-}
-$('#in-equation-1').on('focus',editEquation('in-equation-1'));
-$('#in-equation-2').on('focus',editEquation('in-equation-2'));
-$('#in-equation-3').on('focus',editEquation('in-equation-3'));
-$('#in-equation-4').on('focus',editEquation('in-equation-4'));
-
-// $('#panel-equations').on('focus','input',showEquationEditor);
-// $('#panel-equations').on('blur','input',showGraph);
-
-
-$('#btn-zoom-in').on('click',handleZoomIn);
-$('#btn-zoom-out').on('click',handleZoomOut);
-
-$('#btn-pan-up').on('click',handlePanUp);
-$('#btn-pan-down').on('click',handlePanDown);
-$('#btn-pan-left').on('click',handlePanLeft);
-$('#btn-pan-right').on('click',handlePanRight);
-
-$('#btn-view-reset').on('click',function(){
-	showGraph();
-	handleViewReset();
-});
-
-function toggleAnnotation(){
-	$note = $('#canvas-note');
-
-	// If the annotations are hidden:
-	// clear and show the annotation and hide the panning buttons
-	if( $note.hasClass('hide') ){
-		$note[0].width = $note[0].width;
-		$('#btn-pan-up').addClass('hide');
-		$('#btn-pan-down').addClass('hide');
-		$('#btn-pan-left').addClass('hide');
-		$('#btn-pan-right').addClass('hide');
-		$note.removeClass('hide');
-	// Otherwise - hide the annotation and show the panning buttons
-	}else{
-		$note.addClass('hide');
-		$('#btn-pan-up').removeClass('hide');
-		$('#btn-pan-down').removeClass('hide');
-		$('#btn-pan-left').removeClass('hide');
-		$('#btn-pan-right').removeClass('hide');
-		$note.addClass('hide');
-	}
-
-	showGraph();
-}
-$('#btn-annotate').on('click',toggleAnnotation);
-
-setupOverlay('#canvas-note');
-
-$(document).ready(function(){
-	setupKeypad();
+onload = function(){
+	// Set the global variables 
+	activeEquation = $('#in-equation-1')[0];
 	graph.colors = [
 		{r:255,g:0,b:0},
 		{r:0,g:255,b:0},
@@ -585,7 +559,49 @@ $(document).ready(function(){
 	graph.yMax = 10;
 	graph.canvas = $('#canvas-graph')[0];
 	graph.grid = $('#canvas-grid')[0];
-});
+
+	// Bind UI events to thekeypad
+	setupKeypad();
+
+	// Setup drag panning
+	$('#canvas-grid').hammer()
+	  .on('dragstart',handlePanDragStart)
+	  .on('drag',handlePanDragMove)
+	  .on('dragend',handlePanDragEnd);
+
+	// Setup the keypad tabs
+	$('#button-numbers').on('click',function(){activateKeypad('numbers');});
+	$('#button-functions').on('click',function(){activateKeypad('functions');});
+	$('#button-logic').on('click',function(){activateKeypad('logic');});
+	$('#button-operators').on('click',function(){activateKeypad('operators');});
+
+	// Setup changing focus when an equation is clicked
+	$('#in-equation-1').on('focus',editEquation('in-equation-1'));
+	$('#in-equation-2').on('focus',editEquation('in-equation-2'));
+	$('#in-equation-3').on('focus',editEquation('in-equation-3'));
+	$('#in-equation-4').on('focus',editEquation('in-equation-4'));
+
+	// Enable Zooming
+	$('#btn-zoom-in').on('click',handleZoomIn);
+	$('#btn-zoom-out').on('click',handleZoomOut);
+	$('#btn-view-reset').on('click',function(){
+		showGraph();
+		handleViewReset();
+	});
+
+	// Setup the button for adding notes on the drawing
+	$('#btn-annotate').on('click',toggleAnnotation);
+	setupOverlay('#canvas-note');
+	
+	// Setup the overlaid panning buttons
+	$('#btn-pan-up').on('click',handlePanUp);
+	$('#btn-pan-down').on('click',handlePanDown);
+	$('#btn-pan-left').on('click',handlePanLeft);
+	$('#btn-pan-right').on('click',handlePanRight);
+
+	// Size the window (and bind resize event)
+	$(window).on('resize',handleResize).resize();
+};
 </script>
 </body>
 </html>
