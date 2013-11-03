@@ -234,48 +234,91 @@ $(window).on('resize',function(){
 	redraw();
 }).resize();
 
+function backspaceSelected(node){
+	var scrollPos = node.scrollTop;
+	if(document.selection){
+		if(!node.focus()){node.focus();}
+		var text = document.selection.createRange().text;
+
+		// If the user has text selected, delete it
+		if( text.length !== 0 ){
+			document.selection.createRange().text = '';
+		}
+		// Otherwise - remove the last character...
+		else{
+		}
+	}else{
+		// Determine the start/end of the selection
+		var start = node.selectionStart;
+		var newStart = start-1;
+		var end = node.selectionEnd;
+		var left = '';
+		var right = node.value.substr(end);
+
+		// If nothing is selected, delete the last character on the left
+		// Otherwise, just delete the selection
+		if( start === end ){
+			newStart = start-1;
+		}else{
+			newStart = start;
+		}
+		left = node.value.substr(0,newStart);
+
+		// Update the element
+		node.value = left+right;
+
+		// Set the right cursor position
+		if( newStart < 0 ){ newStart = 0; }
+		node.selectionStart = newStart;
+		node.selectionEnd = newStart;
+	}
+
+	// scroll to the cursor (only if `node` is a textarea)
+	node.scrollTop = scrollPos;
+	node.focus();
+}
 function wrapSelected(node,leftText,rightText){
 	// node = document.getElementById(id);
 	var scrollPos = node.scrollTop;
 	if(document.selection){
 		// IE is surprisingly efficient in this one...
 		if(!node.focus()){node.focus();}
-		var _sel = document.selection.createRange().text;
-		var _txt = document.selection.createRange();
-		_txt.text = leftText;
+		var sel = document.selection.createRange().text;
+		var txt = document.selection.createRange();
+		txt.text = leftText;
 		if(rightText){
-			_txt.text += _sel;
-			_txt.text += rightText;
+			txt.text += _sel;
+			txt.text += rightText;
 		}
 	}else{
 		
 		// Get the locations of the start/end of the selection
 		// Grab all of the text before the selection
 		// Add the 'left' text to the start of the selection
-		var _start = node.selectionStart;
-		var _end = node.selectionEnd;
-		var _txt = node.value.substr(0,_start);
-		_txt += leftText;
+		var start = node.selectionStart;
+		var end = node.selectionEnd;
+		var txt = node.value.substr(0,start);
+		txt += leftText;
 
 		// If we're also adding text to the right side
 		// add the selected text PLUS the text we're adding on the right 
 		if( rightText ){
-			_txt += node.value.substr(_start,_end-_start);
-			_txt += rightText;
+			txt += node.value.substr(start,end-start);
+			txt += rightText;
 		}
 
 		// Add the rest of the text and set it on the element
-		_txt += node.value.substr(_end);
-		node.value = _txt;
+		txt += node.value.substr(end);
+		node.value = txt;
 
 		// Fix the selection so it is the same as it was before
-		node.selectionStart = _start + leftText.length;
-		node.selectionEnd = _start + leftText.length;
+		node.selectionStart = start + leftText.length;
+		node.selectionEnd = start + leftText.length;
 		if( rightText ){
-			node.selectionEnd = _end + leftText.length + rightText.length-1;
+			node.selectionEnd = end + leftText.length + rightText.length-1;
 		}
 	}
-	// If scroll to the cursor (only if `node` is a textarea)
+	// scroll to the cursor (only if `node` is a textarea)
 	node.scrollTop = scrollPos;
 	node.focus();
 }
@@ -351,6 +394,10 @@ function setupKeypad(){
 
 	$('#button-clear').on('click',function(){
 		activeEquation.value = '';
+	});
+
+	$('#button-backspace').on('click',function(){
+		backspaceSelected(activeEquation);
 	});
 }
 function showEquationEditor(){
