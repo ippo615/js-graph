@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html >
+<head>
+	<meta charset="utf-8">
+	<title>Grapher</title>
+	<meta name="description" content="Grapher">
+	<meta name="author" content="Andrew Ippoliti">
+
+	<!-- IN ANDROID BROWSER - enter "about:debug" in the address bar
+	     It should give you some extra options and a 'js console' -->
+
+	<!-- Mobile viewport optimization http://goo.gl/b9SaQ -->
+	<meta name="HandheldFriendly" content="True">
+	<meta name="MobileOptimized" content="320">
+	<meta name="viewport" content="width=320, height=320, user-scalable=no" />
+	
+	<!-- Hide browser chrome (iOS only) -->
+	<meta name="apple-mobile-web-app-capable" content="yes" />	
+	<link rel="stylesheet" href="./styles/default.css" />
+	<style type="text/css">
+	/*.container { min-width: 480px; padding: 0 0.333em;  float: left; }*/
+	*, *:before, *:after {
+		-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+	}
+	@media all and (min-width: 980px){
+
+	}
+	@media all and (min-width: 1600px){
+
+	}
+	canvas {
+		-webkit-box-shadow: 0px 0px 8px 1px #aaaaaa;
+		box-shadow: 0px 0px 8px 1px #aaaaaa;
+	}
+	html, body { margin: 0; padding: 0 }
+	body { font-size: 32px; text-align: center; overflow: hidden; }
+	label {display: block; font-size: 1.5em; }
+	input {display: block; border: none; }
+	div {background: #FFF;}
+
+	button {width: 25%;height:25%; float: left;}
+	canvas:active,canvas:focus {cursor: pointer;}
+
+	#container {position: relative; top:0; left:0;}
+
+	input {width: 100%; display: block; border-bottom: 1px solid #888;}
+	#form-equations {height: 80%;}
+	.equation {height: 25%;} 
+	#in-equation-1 {color: #800;}
+	#in-equation-2 {color: #080;}
+	#in-equation-3 {color: #088;}
+	#in-equation-4 {color: #880;}
+	.panel { margin: 0; float: left; position: relative;}
+
+	button {width: 25%; float: left; height: 20%; line-height: 1em;}
+
+	.btn-pan { background: transparent; border:none; }
+	#btn-pan-up {position:absolute; left: 5%; width: 90%; top: 0; }
+	#btn-pan-down {position:absolute; left: 5%; width: 90%; bottom: 0; }
+	#btn-pan-left {position:absolute; left: 0; top: 0;}
+	#btn-pan-right {position:absolute; right: 0; top: 0; }
+
+	.animate { transition: all .4s ease-in-out; }
+	</style>
+	<style type="text/css" id="style-dynamic"></style>
+
+	<script type="text/javascript" src="lib/jquery.min.js"></script>
+	<script type="text/javascript" src="lib/hammer.min.js"></script>
+</head>
+<body class='animate'>
+
+	<div id='container' class='animate'>
+		<div id='panel-graph' class='animate panel'>
+			<button class="btn-pan" id='btn-pan-up'>&uarr;</button>
+			<button class="btn-pan" id='btn-pan-down'>&darr;</button>
+			<button class="btn-pan" id='btn-pan-left'>&larr;</button>
+			<button class="btn-pan" id='btn-pan-right'>&rarr;</button>
+			<canvas id='canvas-graph' ></canvas>
+		</div>
+
+		<div id='panel-equations' class='animate panel'>
+			<form id='form-equations'>
+				<input type='text' class='equation' id='in-equation-1' />
+				<input type='text' class='equation' id='in-equation-2' />
+				<input type='text' class='equation' id='in-equation-3' />
+				<input type='text' class='equation' id='in-equation-4' />
+			</form>
+			<button id='btn-zoom-in' class=''>+</button>
+			<button id='btn-zoom-out' class=''>-</button>
+			<button id='btn-view-reset' class=''>o</button>
+		</div>
+
+		<div id='panel-keypad' class='animate panel' style='background-color: #0F0;'>
+
+		</div>
+	</div>
+<script type="text/javascript">
+// ------------------------------------ [ Module: jQuery.changeStyleSheet ] -
+// Changes the innerHTML of a style sheet (fixes IE<9 errors)
+(function ($) {
+   $.fn.styleSheet = function(cssCode){
+     // note: `this` is actually a jQuery object NOT a dom node
+     var ie;
+     try {
+       this.html(cssCode);
+     }catch(ie){
+       // Internet explorer < 9 does not let me set the innerHTML
+       // of a style tag, so I need to do the following instead
+       // (note: other browsers don't like this)
+       this[0].styleSheet.cssText = cssCode;
+     }
+     return this;
+   }  
+})(jQuery);
+
+
+
+function parseEquation(eq){
+	// Cheap parser to handle sin -> Math.sin conversions
+	eq = eq.toLowerCase()
+		.replace(/\s+/g,'')
+		.replace(/{/g,'{')
+		.replace(/}/g,'}')
+		.replace(/\[/g,'[')
+		.replace(/\]/g,']')
+		.replace(/and/g,'&&')
+		.replace(/xor/g,'^')
+		.replace(/or/g,'||')
+		.replace(/pi/g,'Math.PI')
+		.replace(/\be(?!xp)/g,'Math.E')
+		.replace(/asin|arcsin/g,'Math.asin')
+		.replace(/acos|arccos/g,'Math.acos')
+		.replace(/atan|arctan/g,'Math.atan')
+		.replace(/atan2|arctan2/g,'Math.atan2')
+		.replace(/\bsin\b/g,'Math.sin')
+		.replace(/\bcos\b/g,'Math.cos')
+		.replace(/\btan\b/g,'Math.tan')
+		.replace(/sqrt/g,'Math.sqrt')
+		.replace(/abs/g,'Math.abs')
+		.replace(/pow/g,'Math.pow')
+		.replace(/exp/g,'Math.exp')
+		.replace(/ln/g,'Math.log')
+		.replace(/ceil|up/g,'Math.ceil')
+		.replace(/floor|down/g,'Math.floor')
+		.replace(/round/g,'Math.round')
+		.replace(/<=|=</g,'LTE')
+		.replace(/>=|=>/g,'GTE')
+		.replace(/([^=]+)=+([^=]+)/g,'Math.abs($1-$2) <= pxSize')
+		.replace(/GTE/g,'>=')
+		.replace(/LTE/g,'<=')
+		.replace(/y/g,'-y') // invert for canvas - may want to move this
+		;
+	
+	// Make function and return it
+	var func;
+	try{
+		eval("func = function(x,y,pxSize){ return "+eq+"; };");
+	}catch(e){
+		console.info(eq);
+		console.info(e);
+		// Just return a function that does nothing
+		func = function(x,y,pxSize){return 0;};
+	}
+	return func; 
+}
+
+
+function roundToSigFigs(num,nSigFigs){
+	// We can't round 0
+	if( num === 0 ){ return 0; }
+	
+	// Avoid negatives because log of a negative number is a complex number
+	var isNeg = (num < 0);
+	if( isNeg ){
+		num = -num;
+	}
+	
+	// We need to find the power of ten (10^X) that this number is closest to
+	// note: 0.1 = 10^-1 ie numbers < 1, have negative powers
+	var pow = Math.floor(Math.log(num)/Math.LN10);
+	// Then use that power to compute an appropriate spot to round to
+	var to = Math.pow(10, pow - nSigFigs + 1 );
+	
+	// Just round to that power, and correct the negative part
+	if( isNeg ){
+		return -Math.round( num/to )*to;
+	}else{
+		return Math.round( num/to )*to;
+	}
+}
+/*
+console.info(roundToSigFigs(999,1));
+console.info(roundToSigFigs(0.0999,1));
+console.info(roundToSigFigs(0.0988,2));
+console.info(roundToSigFigs(0.0988,2));
+console.info(roundToSigFigs(0.0500,2));
+console.info(roundToSigFigs(0.0520,2));
+console.info(roundToSigFigs(123456,2));
+console.info(roundToSigFigs(123456,3));
+console.info(roundToSigFigs(123456,4));
+console.info(roundToSigFigs(123456,5));
+console.info(roundToSigFigs(123456,6));
+*/
+
+function remap(fromValue,fromMin,fromMax,toMin,toMax){
+
+	// Make sure min is less than max
+	var swap;
+	if( fromMin > fromMax ){ swap = fromMax; fromMin = fromMax; fromMin = swap; }
+	if( toMin > toMax ){ swap = toMax; toMin = toMax; toMin = swap; }
+	
+	// Compute the range of the data
+	var fromRange = fromMax - fromMin;
+	var toRange = toMax - toMin;
+
+	// If either range is 0, then the value can only be mapped to 1 value
+	if( fromRange === 0 ){ return toMin + toRange/2; }
+	if( toRange === 0 ){ return toMin; }
+
+	// (1) untranslate, (2) unscale, (3) rescale, (4) retranslate
+	var toValue = (fromValue - fromMin) / fromRange;
+	toValue = (toRange*toValue) + toMin;
+
+	return toValue;
+}
+// alert( remap( 160, 0,320, 0,10 ) );
+// alert( remap( 160, 0,320, 0,10000 ) );
+// alert( remap( -40, 0,320, 0,10 ) );
+
+
+function plotPartial(canvas,options){
+	var xCanvasSize = canvas.width;
+	var yCanvasSize = canvas.height;
+
+	options.canvas = canvas;
+	options.xCanvasSize = xCanvasSize;
+	options.yCanvasSize = yCanvasSize;
+
+	// Define the region we are drawing
+	var xStart = options.xStart || 0;
+	var yStart = options.yStart || 0;
+	var xSize = options.xSize || xCanvasSize;
+	var ySize = options.ySize || yCanvasSize;
+	var xEnd = xStart + xSize;
+	var yEnd = yStart + ySize;
+
+	// Make sure we stay in bounds of the image
+	if( xEnd > xCanvasSize ){
+		xEnd = xCanvasSize;
+		xSize = xCanvasSize - xStart;
+	}
+	if( yEnd > yCanvasSize ){
+		yEnd = yCanvasSize;
+		ySize = yCanvasSize - yStart;
+	}
+
+	// Determine where in the function we are
+	// Note: we have to use the `if` statement because 0 is a valid maximum
+	var xMin = options.xMin || 0;
+	var xMax = xCanvasSize;
+	var yMin = options.yMin || 0;
+	var yMax = yCanvasSize;
+	if( options.hasOwnProperty('xMax') ){
+		xMax = options.xMax;
+	}
+	if( options.hasOwnProperty('yMax') ){
+		yMax = options.yMax;
+	}
+
+	// Compute the size of a pixel
+	// This is important for determining "equality"
+	// The exact value required for equality may not be in the pixel
+	// grid SO we need to see if the difference between the
+	// expressions is less than the pixel size
+	// x = y become abs(x-y) <= pixelSize
+	var xPixelSize = (xMax-xMin)/xCanvasSize;
+	var yPixelSize = (yMax-yMin)/yCanvasSize;
+	var pixelSize = (xPixelSize+yPixelSize);
+
+	var context = canvas.getContext('2d');
+	var imageData = context.getImageData(xStart,yStart,xSize,ySize);
+	var pixels = imageData.data;
+
+	var x,y, fx,fy, index, eq0, eq1, eq2, eq3, r,g,b;
+	for( x=xStart; x<xEnd; x+=1 ){
+		for( y=yStart; y<yEnd; y+=1 ){
+			fx = remap(x,0,xCanvasSize,xMin,xMax);
+			fy = remap(y,0,yCanvasSize,yMin,yMax);
+			eq0 = options.functions[0](fx,fy,pixelSize) || 0;
+			eq1 = options.functions[1](fx,fy,pixelSize) || 0;
+			eq2 = options.functions[2](fx,fy,pixelSize) || 0;
+			eq3 = options.functions[3](fx,fy,pixelSize) || 0;
+			index = ((x-xStart)+(y-yStart)*xSize)*4;
+			// If any are shown turn the alpha on
+			if( eq0 || eq1 || eq2 || eq3 ){
+				pixels[index+3] = 255;
+			}else{
+				pixels[index+3] = 0;
+			}
+			// merge color:
+			r = 0;
+			r += eq0 * options.colors[0].r;
+			r += eq1 * options.colors[1].r;
+			r += eq2 * options.colors[2].r;
+			r += eq3 * options.colors[3].r;
+			r /= (eq0+eq1+eq2+eq3);
+			g = 0;
+			g += eq0 * options.colors[0].g;
+			g += eq1 * options.colors[1].g;
+			g += eq2 * options.colors[2].g;
+			g += eq3 * options.colors[3].g;
+			g /= (eq0+eq1+eq2+eq3);
+			b = 0;
+			b += eq0 * options.colors[0].b;
+			b += eq1 * options.colors[1].b;
+			b += eq2 * options.colors[2].b;
+			b += eq3 * options.colors[3].b;
+			b /= (eq0+eq1+eq2+eq3);
+			pixels[index+0] = r;
+			pixels[index+1] = g;
+			pixels[index+2] = b;
+		}
+	}
+
+	context.putImageData(imageData,xStart,yStart);
+
+}
+var graph = {
+	colors: [
+		{r:255,g:0,b:0},
+		{r:0,g:255,b:0},
+		{r:0,g:0,b:255},
+		{r:255,g:255,b:0}
+	],
+	functions: [
+		parseEquation('y < sin(x*pi/180)*320'),
+		parseEquation('0'),
+		parseEquation('-y < sin(x*pi/180)*320'),
+		parseEquation('y < x')
+	]
+};
+//console.info( (parseEquation('y=7*x'))(1,7) )
+//console.info( (parseEquation('y=7+x'))(0,7) )
+//console.info( (parseEquation('3*y=x'))(3,1) )
+
+
+// Plot the deafualt section
+/*
+plotPartial($('#canvas-graph')[0],{
+	functions: graph.functions,
+	colors: graph.colors,
+});
+
+// Start at 64,32 and plot the default width/height
+
+plotPartial($('#canvas-graph')[0],{
+	functions: graph.functions,
+	colors: graph.colors,
+	xStart: 64,
+	yStart: 32
+});
+
+plotPartial($('#canvas-graph')[0],{
+	functions: graph.functions,
+	colors: graph.colors,
+	xStart: 16,
+	yStart: 64,
+	xSize: 128,
+	ySize: 64
+});
+*/
+
+var graph = {
+	colors: [
+		{r:255,g:0,b:0},
+		{r:0,g:255,b:0},
+		{r:0,g:0,b:255},
+		{r:255,g:255,b:0}
+	],
+	xMin: -10,
+	xMax: 10,
+	yMin: -10,
+	yMax: 10
+};
+function graphPan(opts,dX,dY){
+	// dX and dY should be in percent
+	var xSize = opts.xMax - opts.xMin;
+	var ySize = opts.yMax - opts.yMin;
+	opts.xMax += dX * xSize;
+	opts.xMin += dX * xSize;
+	opts.yMax += dY * ySize;
+	opts.yMin += dY * ySize;
+	return opts;
+}
+function graphPanPx(opts,dX,dY){
+	// dX and dY should be in pixels (of the canvas)
+	dX /= opts.xCanvasSize;
+	dY /= opts.yCanvasSize;
+	var xSize = opts.xMax - opts.xMin;
+	var ySize = opts.yMax - opts.yMin;
+	opts.xMax += dX * xSize;
+	opts.xMin += dX * xSize;
+	opts.yMax += dY * ySize;
+	opts.yMin += dY * ySize;
+	return opts;
+}
+function graphZoom(opts,scale){
+	var xSize = opts.xMax - opts.xMin;
+	var ySize = opts.yMax - opts.yMin;
+	var xMid = opts.xMin + xSize/2;
+	var yMid = opts.yMin + ySize/2;
+	var xZoomed = scale*xSize/2;
+	var yZoomed = scale*ySize/2;
+	opts.xMin = xMid - xZoomed;
+	opts.yMin = yMid - yZoomed;
+	opts.xMax = xMid + xZoomed;
+	opts.yMax = yMid + yZoomed;
+	return opts;
+}
+function updateFunctions(opts){
+	opts.functions = [
+		parseEquation($('#in-equation-1').val()),
+		parseEquation($('#in-equation-2').val()),
+		parseEquation($('#in-equation-3').val()),
+		parseEquation($('#in-equation-4').val())
+	];
+	return opts;
+}
+function handleZoomIn(){
+	graphZoom(graph,0.5);
+	redraw();
+}
+function handleZoomOut(){
+	graphZoom(graph,2.0);
+	redraw();
+}
+function handlePanUp(){
+	graphPan(graph,0.0,-0.5);
+	redraw();
+}
+function handlePanDown(){
+	graphPan(graph,0.0,0.5);
+	redraw();
+}
+function handlePanLeft(){
+	graphPan(graph,-0.5,0.0);
+	redraw();
+}
+function handlePanRight(){
+	graphPan(graph,0.5,0.0);
+	redraw();
+}
+
+function handlePanDragStart(ev){
+	var $this = $(this);
+
+	// disable browser scrolling
+	ev.gesture.preventDefault();
+
+	// Determine what was originally drawn:
+	graph.xMinDragStart = graph.xMin;
+	graph.yMinDragStart = graph.yMin;
+	graph.xMaxDragStart = graph.xMax;
+	graph.yMaxDragStart = graph.yMax;
+
+	// Remember the old deltas  (we need to substract them)
+	graph.xOldDelta = 0;
+	graph.yOldDelta = 0;
+
+}
+function handlePanDragMove(ev){
+	// disable browser scrolling
+	ev.gesture.preventDefault();
+
+	// Remember the old region we were drawing
+	var xMinOld = graph.xMin;
+	var xMaxOld = graph.xMax;
+	var yMinOld = graph.yMin;
+	var yMaxOld = graph.yMax;
+
+	// Compute the new region we should move to
+	var xShift = ev.gesture.deltaX - graph.xOldDelta;
+	var yShift = ev.gesture.deltaY - graph.yOldDelta;
+
+	// Compute the section that is still visible, and the new regions
+	var xSizeCopy = Math.floor(graph.xCanvasSize - Math.abs(xShift));
+	var xMinCopy = 0;
+	var xMinTarget = Math.floor(Math.abs(xShift));
+	var xMinNew = 0;
+	var xSizeNew = Math.floor(Math.abs(xShift));
+	if( xShift < 0 ){
+		xMinCopy = Math.floor(Math.abs(xShift));
+		xMinTarget = 0;
+		xMinNew = graph.xCanvasSize - xSizeNew;
+	}
+	var ySizeCopy = Math.floor(graph.yCanvasSize - Math.abs(yShift));
+	var yMinCopy = 0;
+	var yMinTarget = Math.floor(Math.abs(yShift));
+	var yMinNew = 0;
+	var ySizeNew = Math.floor(Math.abs(yShift));
+	if( yShift < 0 ){
+		yMinCopy = Math.floor(Math.abs(yShift));
+		yMinTarget = 0;
+		yMinNew = graph.yCanvasSize - ySizeNew;
+	}
+
+	// Copy the section that is still visible
+	var ctx = graph.canvas.getContext('2d');
+	var copy = ctx.getImageData(xMinCopy,yMinCopy,xSizeCopy,ySizeCopy);
+	ctx.putImageData(copy,xMinTarget,yMinTarget);
+
+	// Do the pan
+	graphPanPx(graph,-xShift,-yShift);
+	graph.xOldDelta = ev.gesture.deltaX;
+	graph.yOldDelta = ev.gesture.deltaY;
+
+	// Draw the new regions
+	var canvas = $('#canvas-graph')[0];
+	if( xShift !== 0 ){
+		graph.xStart = xMinNew;
+		graph.xSize = xSizeNew;
+		delete graph.yStart;
+		delete graph.ySize;
+		plotPartial(canvas,graph);
+		delete graph.xStart;
+		delete graph.xSize;
+	}
+	if( yShift !== 0 ){
+		graph.yStart = yMinNew;
+		graph.ySize = ySizeNew;
+		delete graph.xStart;
+		delete graph.xSize;
+		plotPartial(canvas,graph);
+		delete graph.yStart;
+		delete graph.ySize;
+	}
+
+
+	//redraw();
+}
+
+function handleViewReset(){
+	graph.xMax =  10;
+	graph.xMin = -10;
+	graph.yMax =  10;
+	graph.yMin = -10;
+	redraw();
+}
+function redraw(){
+	// Clear the canvas then redraw everything
+	var canvas = $('#canvas-graph')[0];
+	canvas.width = canvas.width;
+	graph = updateFunctions(graph);
+	plotPartial(canvas,graph);
+	/*
+	var i,w=$(window).width()/2-1;
+	var scale = Math.ceil(w/30);
+	for( i=0; i<w; i+=scale ){
+		setTimeout((function(i){
+			return function(){
+				plotPartial($('#canvas-graph')[0],{
+					functions: graph.functions,
+					colors: graph.colors,
+					xStart: i,
+					xSize: scale
+				});
+			}
+		})(i),i);
+	}
+	*/
+}
+
+
+
+
+
+$(window).on('resize',function(){
+	var $window = $(this);
+	var w = $window.width();
+	var h = $window.height();
+
+	// Resize for portrait or landscape
+	var dynamicStyles = "";
+	if( w > h ){
+		// Lanscape
+		dynamicStyles += '.panel { height:'+h+'px;'
+		dynamicStyles += '  width:'+Math.floor(w/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w*2)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w/2);
+		$('#canvas-graph')[0].height = Math.floor(h);
+	}else{
+		dynamicStyles += '.panel { width:'+w+'px;'
+		dynamicStyles += '  height:'+Math.floor(h/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h/2*3)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w);
+		$('#canvas-graph')[0].height = Math.floor(h/2);
+	}
+	$('#style-dynamic').styleSheet(dynamicStyles);
+
+	// Resize the fonts
+	var body = $('body');
+	body.css({fontSize:(w+h)/1024*48});
+
+	// Redraw the graph
+	redraw();
+}).resize();
+
+function showEquationEditor(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:-w/2,top:0});
+	}else{
+		$('#container').css({left:0,top:-h/2});
+	}
+}
+function showGraph(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:0,top:0});
+	}else{
+		$('#container').css({left:0,top:0});
+	}
+	redraw();
+}
+
+$('#canvas-graph').hammer()
+  .on('dragstart',handlePanDragStart)
+  .on('drag',handlePanDragMove);
+
+$('#panel-equations').on('focus','input',showEquationEditor);
+$('#panel-equations').on('blur','input',showGraph);
+
+$('#btn-zoom-in').on('click',handleZoomIn);
+$('#btn-zoom-out').on('click',handleZoomOut);
+
+$('#btn-pan-up').on('click',handlePanUp);
+$('#btn-pan-down').on('click',handlePanDown);
+$('#btn-pan-left').on('click',handlePanLeft);
+$('#btn-pan-right').on('click',handlePanRight);
+
+$('#btn-view-reset').on('click',handleViewReset);
+</script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html >
+<head>
+	<meta charset="utf-8">
+	<title>Grapher</title>
+	<meta name="description" content="Grapher">
+	<meta name="author" content="Andrew Ippoliti">
+
+	<!-- IN ANDROID BROWSER - enter "about:debug" in the address bar
+	     It should give you some extra options and a 'js console' -->
+
+	<!-- Mobile viewport optimization http://goo.gl/b9SaQ -->
+	<meta name="HandheldFriendly" content="True">
+	<meta name="MobileOptimized" content="320">
+	<meta name="viewport" content="width=320, height=320, user-scalable=no" />
+	
+	<!-- Hide browser chrome (iOS only) -->
+	<meta name="apple-mobile-web-app-capable" content="yes" />	
+	<link rel="stylesheet" href="./styles/default.css" />
+	<style type="text/css">
+	/*.container { min-width: 480px; padding: 0 0.333em;  float: left; }*/
+	*, *:before, *:after {
+		-moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+	}
+	@media all and (min-width: 980px){
+
+	}
+	@media all and (min-width: 1600px){
+
+	}
+	canvas {
+		-webkit-box-shadow: 0px 0px 8px 1px #aaaaaa;
+		box-shadow: 0px 0px 8px 1px #aaaaaa;
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+	html, body { margin: 0; padding: 0 }
+	body { font-size: 32px; text-align: center; overflow: hidden; }
+	label {display: block; font-size: 1.5em; }
+	input {display: block; border: none; }
+	div {background: #FFF;}
+
+	button {width: 25%;height:25%; float: left;}
+	canvas:active,canvas:focus {cursor: pointer;}
+
+	#container {position: relative; top:0; left:0;}
+
+	input {width: 100%; display: block; border-bottom: 1px solid #888;}
+	#form-equations {height: 80%;}
+	.equation {height: 25%;} 
+	#in-equation-1 {color: #800;}
+	#in-equation-2 {color: #080;}
+	#in-equation-3 {color: #088;}
+	#in-equation-4 {color: #880;}
+	.panel { margin: 0; float: left; position: relative; }
+
+	button {width: 25%; float: left; height: 20%; line-height: 1em;}
+
+	.btn-pan { background: transparent; border:none; }
+	#btn-pan-up {position:absolute; left: 5%; width: 90%; top: 0; }
+	#btn-pan-down {position:absolute; left: 5%; width: 90%; bottom: 0; }
+	#btn-pan-left {position:absolute; left: 0; top: 0;}
+	#btn-pan-right {position:absolute; right: 0; top: 0; }
+
+	.animate { transition: all .4s ease-in-out; }
+
+	.keypad-btn {position: absolute; width: 25%; height: 25%; line-height: 1em;}
+	.keypad-tab {position: absolute; width: 25%; height: 25%; line-height: 1em;}
+
+	.btn-0-0 { top:0; left:0; }
+	.btn-0-1 { top:0; left:25%; }
+	.btn-0-2 { top:0; left:50%; }
+	.btn-0-3 { top:0; left:75%; }
+
+	.btn-1-0 { top:25%; left:0; }
+	.btn-1-1 { top:25%; left:25%; }
+	.btn-1-2 { top:25%; left:50%; }
+	.btn-1-3 { top:25%; left:75%; }
+
+	.btn-2-0 { top:50%; left:0; }
+	.btn-2-1 { top:50%; left:25%; }
+	.btn-2-2 { top:50%; left:50%; }
+	.btn-2-3 { top:50%; left:75%; }
+
+	.btn-3-0 { top:75%; left:0; }
+	.btn-3-1 { top:75%; left:25%; }
+	.btn-3-2 { top:75%; left:50%; }
+	.btn-3-3 { top:75%; left:75%; }
+
+	</style>
+	<style type="text/css" id="style-dynamic"></style>
+
+	<script type="text/javascript" src="lib/jquery.min.js"></script>
+	<script type="text/javascript" src="lib/hammer.min.js"></script>
+</head>
+<body class='animate'>
+
+	<div id='container' class='animate'>
+		<div id='panel-graph' class='animate panel'>
+			<canvas id='canvas-graph' ></canvas>
+			<canvas id='canvas-grid' ></canvas>
+			<button class="btn-pan" id='btn-pan-up'>&uarr;</button>
+			<button class="btn-pan" id='btn-pan-down'>&darr;</button>
+			<button class="btn-pan" id='btn-pan-left'>&larr;</button>
+			<button class="btn-pan" id='btn-pan-right'>&rarr;</button>
+		</div>
+
+		<div id='panel-equations' class='animate panel'>
+			<form id='form-equations'>
+				<input type='text' class='equation' id='in-equation-1' />
+				<input type='text' class='equation' id='in-equation-2' />
+				<input type='text' class='equation' id='in-equation-3' />
+				<input type='text' class='equation' id='in-equation-4' />
+			</form>
+			<button id='btn-zoom-in' class=''>+</button>
+			<button id='btn-zoom-out' class=''>-</button>
+			<button id='btn-view-reset' class=''>o</button>
+		</div>
+
+		<div id='panel-keypad' class='animate panel' style='background-color: #0F0;'>
+			<div id='keypad-numbers'>
+				<button class='keypad-btn btn-0-0' id='button-1'>1</button>
+				<button class='keypad-btn btn-0-1' id='button-2'>2</button>
+				<button class='keypad-btn btn-0-2' id='button-3'>3</button>
+				<button class='keypad-btn btn-1-0' id='button-4'>4</button>
+				<button class='keypad-btn btn-1-1' id='button-5'>5</button>
+				<button class='keypad-btn btn-1-2' id='button-6'>6</button>
+				<button class='keypad-btn btn-2-0' id='button-7'>7</button>
+				<button class='keypad-btn btn-2-1' id='button-8'>8</button>
+				<button class='keypad-btn btn-2-2' id='button-9'>9</button>
+				<button class='keypad-btn btn-3-0' id='button-dot'>.</button>
+				<button class='keypad-btn btn-3-1' id='button-0'>0</button>
+				<button class='keypad-btn btn-3-2' id='button-minus'>-</button>
+			</div>
+			<div id='keypad-functions'>
+				<button class='keypad-btn btn-0-0' id='button-sin'>sin</button>
+				<button class='keypad-btn btn-0-1' id='button-cos'>cos</button>
+				<button class='keypad-btn btn-0-2' id='button-tan'>tan</button>
+				<button class='keypad-btn btn-1-0' id='button-asin'>asin</button>
+				<button class='keypad-btn btn-1-1' id='button-acos'>acos</button>
+				<button class='keypad-btn btn-1-2' id='button-atan'>atan</button>
+				<button class='keypad-btn btn-2-0' id='button-floor'>floor</button>
+				<button class='keypad-btn btn-2-1' id='button-round'>round</button>
+				<button class='keypad-btn btn-2-2' id='button-ceil'>ceil</button>
+				<button class='keypad-btn btn-3-0' id='button-ln'>ln</button>
+				<button class='keypad-btn btn-3-1' id='button-pow'>pow</button>
+				<button class='keypad-btn btn-3-2' id='button-exp'>exp</button>
+			</div>
+			<div id='keypad-logic'>
+				<button class='keypad-btn btn-0-0' id='button-less-than'>&lt;</button>
+				<button class='keypad-btn btn-0-1' id='button-not-equal'>&ne;</button>
+				<button class='keypad-btn btn-0-2' id='button-more-than'>&gt;</button>
+				<button class='keypad-btn btn-1-0' id='button-less-equal'>&le;</button>
+				<button class='keypad-btn btn-1-1' id='button-equal'>=</button>
+				<button class='keypad-btn btn-1-2' id='button-more-equal'>&ge;</button>
+				<button class='keypad-btn btn-2-0' id='button-and'>and</button>
+				<button class='keypad-btn btn-2-1' id='button-or'>or</button>
+				<button class='keypad-btn btn-2-2' id='button-not'>not</button>
+				<button class='keypad-btn btn-3-0' id='button-xor'>xor</button>
+				<button class='keypad-btn btn-3-1' id='button-0'>-</button>
+				<button class='keypad-btn btn-3-2' id='button-minus'>-</button>
+			</div>
+			<div id='keypad-operators'>
+				<button class='keypad-btn btn-0-0' id='button-plus'>+</button>
+				<button class='keypad-btn btn-0-1' id='button-minus'>-</button>
+				<button class='keypad-btn btn-0-2' id='button-curly-l'>{</button>
+				<button class='keypad-btn btn-1-0' id='button-times'>&times;</button>
+				<button class='keypad-btn btn-1-1' id='button-divide'>&divide;</button>
+				<button class='keypad-btn btn-1-2' id='button-curly-r'>}</button>
+				<button class='keypad-btn btn-2-0' id='button-paren-l'>(</button>
+				<button class='keypad-btn btn-2-1' id='button-paren-r'>)</button>
+				<button class='keypad-btn btn-2-2' id='button-pi'>PI</button>
+				<button class='keypad-btn btn-3-0' id='button-square-l'>[</button>
+				<button class='keypad-btn btn-3-1' id='button-square-r'>]</button>
+				<button class='keypad-btn btn-3-2' id='button-e'>E</button>
+			</div>
+			<button class='keypad-tab btn-0-3' id='button-numbers'>#</button>
+			<button class='keypad-tab btn-1-3' id='button-functions'>f(x)</button>
+			<button class='keypad-tab btn-2-3' id='button-logic'>&</button>
+			<button class='keypad-tab btn-3-3' id='button-operators'>+</button>
+		<br style='clear:both;'/>
+		</div>
+	</div>
+<script type="text/javascript" src="script.js" ></script>
+<script type="text/javascript">
+$(window).on('resize',function(){
+	var $window = $(this);
+	var w = $window.width();
+	var h = $window.height();
+
+	// Resize for portrait or landscape
+	var dynamicStyles = "";
+	if( w > h ){
+		// Lanscape
+		dynamicStyles += '.panel { height:'+h+'px;'
+		dynamicStyles += '  width:'+Math.floor(w/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w*2)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w/2);
+		$('#canvas-graph')[0].height = Math.floor(h);
+	}else{
+		dynamicStyles += '.panel { width:'+w+'px;'
+		dynamicStyles += '  height:'+Math.floor(h/2)+'px;}\n';
+		dynamicStyles += '#container { width:'+Math.ceil(w)+'px;';
+		dynamicStyles += '  height:'+Math.ceil(h/2*3)+'px;}\n';
+		$('#canvas-graph')[0].width = Math.floor(w);
+		$('#canvas-graph')[0].height = Math.floor(h/2);
+	}
+	$('#style-dynamic').styleSheet(dynamicStyles);
+
+	// Resize the fonts
+	var body = $('body');
+	body.css({fontSize:(w+h)/1024*48});
+
+	// Redraw the graph
+	redraw();
+}).resize();
+
+function showEquationEditor(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:-w/2,top:0});
+	}else{
+		$('#container').css({left:0,top:-h/2});
+	}
+}
+function showGraph(){
+	var $window = $(window);
+	var w = $window.width();
+	var h = $window.height();
+	if( w > h ){
+		$('#container').css({left:0,top:0});
+	}else{
+		$('#container').css({left:0,top:0});
+	}
+	redraw();
+}
+
+$('#canvas-grid').hammer()
+  .on('dragstart',handlePanDragStart)
+  .on('drag',handlePanDragMove)
+  .on('dragend',handlePanDragEnd);
+
+$('#panel-equations').on('focus','input',showEquationEditor);
+$('#panel-equations').on('blur','input',showGraph);
+
+$('#btn-zoom-in').on('click',handleZoomIn);
+$('#btn-zoom-out').on('click',handleZoomOut);
+
+$('#btn-pan-up').on('click',handlePanUp);
+$('#btn-pan-down').on('click',handlePanDown);
+$('#btn-pan-left').on('click',handlePanLeft);
+$('#btn-pan-right').on('click',handlePanRight);
+
+$('#btn-view-reset').on('click',handleViewReset);
+</script>
+</body>
+</html>

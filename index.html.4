@@ -105,7 +105,6 @@
 		<div id='panel-graph' class='animate panel'>
 			<canvas id='canvas-graph' ></canvas>
 			<canvas id='canvas-grid' ></canvas>
-			<canvas id='canvas-note' class='hide' ></canvas>
 			<button class="btn-pan" id='btn-pan-up'>&uarr;</button>
 			<button class="btn-pan" id='btn-pan-down'>&darr;</button>
 			<button class="btn-pan" id='btn-pan-left'>&larr;</button>
@@ -136,17 +135,17 @@
 				<button class='keypad-btn btn-2-0' id='button-7'>7</button>
 				<button class='keypad-btn btn-2-1' id='button-8'>8</button>
 				<button class='keypad-btn btn-2-2' id='button-9'>9</button>
-				<button class='keypad-btn btn-3-0' id='button-y'>y</button>
+				<button class='keypad-btn btn-3-0' id='button-dot'>.</button>
 				<button class='keypad-btn btn-3-1' id='button-0'>0</button>
-				<button class='keypad-btn btn-3-2' id='button-x'>x</button>
+				<button class='keypad-btn btn-3-2' id='button-comma'>,</button>
 			</div>
 			<div id='keypad-functions' class='hide'>
 				<button class='keypad-btn btn-0-0' id='button-sin'>sin</button>
 				<button class='keypad-btn btn-0-1' id='button-cos'>cos</button>
 				<button class='keypad-btn btn-0-2' id='button-tan'>tan</button>
-				<button class='keypad-btn btn-1-0' id='button-asin'>sin<sup>-1</sup></button>
-				<button class='keypad-btn btn-1-1' id='button-acos'>cos<sup>-1</sup></button>
-				<button class='keypad-btn btn-1-2' id='button-atan'>tan<sup>-1</sup></button>
+				<button class='keypad-btn btn-1-0' id='button-asin'>asin</button>
+				<button class='keypad-btn btn-1-1' id='button-acos'>acos</button>
+				<button class='keypad-btn btn-1-2' id='button-atan'>atan</button>
 				<button class='keypad-btn btn-2-0' id='button-floor'>floor</button>
 				<button class='keypad-btn btn-2-1' id='button-round'>round</button>
 				<button class='keypad-btn btn-2-2' id='button-ceil'>ceil</button>
@@ -165,8 +164,8 @@
 				<button class='keypad-btn btn-2-1' id='button-or'>or</button>
 				<button class='keypad-btn btn-2-2' id='button-not'>not</button>
 				<button class='keypad-btn btn-3-0' id='button-xor'>xor</button>
-				<button class='keypad-btn btn-3-1' id='button-comma'>,</button>
-				<button class='keypad-btn btn-3-2' id='button-dot'>.</button>
+				<button class='keypad-btn btn-3-1' id='button-x'>x</button>
+				<button class='keypad-btn btn-3-2' id='button-y'>y</button>
 			</div>
 			<div id='keypad-operators' class='hide'>
 				<button class='keypad-btn btn-0-0' id='button-add'>+</button>
@@ -206,10 +205,6 @@ $(window).on('resize',function(){
 		dynamicStyles += '  height:'+Math.ceil(h)+'px;}\n';
 		$('#canvas-graph')[0].width = Math.floor(w/2);
 		$('#canvas-graph')[0].height = Math.floor(h);
-		$('#canvas-grid')[0].width = Math.floor(w/2);
-		$('#canvas-grid')[0].height = Math.floor(h);
-		$('#canvas-note')[0].width = Math.floor(w/2);
-		$('#canvas-note')[0].height = Math.floor(h);
 	}else{
 		dynamicStyles += '.panel { width:'+w+'px;'
 		dynamicStyles += '  height:'+Math.floor(h/2)+'px;}\n';
@@ -217,10 +212,6 @@ $(window).on('resize',function(){
 		dynamicStyles += '  height:'+Math.ceil(h/2*3)+'px;}\n';
 		$('#canvas-graph')[0].width = Math.floor(w);
 		$('#canvas-graph')[0].height = Math.floor(h/2);
-		$('#canvas-grid')[0].width = Math.floor(w);
-		$('#canvas-grid')[0].height = Math.floor(h/2);
-		$('#canvas-note')[0].width = Math.floor(w);
-		$('#canvas-note')[0].height = Math.floor(h/2);
 	}
 	$('#style-dynamic').styleSheet(dynamicStyles);
 
@@ -279,15 +270,7 @@ function wrapSelected(node,leftText,rightText){
 }
 
 var activeEquation = $('#in-equation-1')[0];
-function insertAndSwitch(left,right,keypad){
-	return function(){
-		wrapSelected(activeEquation,left,right);
-		hideAllKeypads();
-		clearAllKeypadTabs();
-		activateKeypad(keypad);
-	};
-}
-function insertAndStay(left,right){
+function insertInEquation(left,right){
 	return function(){
 		wrapSelected(activeEquation,left,right);
 	};
@@ -295,57 +278,58 @@ function insertAndStay(left,right){
 
 function setupKeypad(){
 
-	$('#button-0').on('click',insertAndStay('0',''));
-	$('#button-1').on('click',insertAndStay('1',''));
-	$('#button-2').on('click',insertAndStay('2',''));
-	$('#button-3').on('click',insertAndStay('3',''));
-	$('#button-4').on('click',insertAndStay('4',''));
-	$('#button-5').on('click',insertAndStay('5',''));
-	$('#button-6').on('click',insertAndStay('6',''));
-	$('#button-7').on('click',insertAndStay('7',''));
-	$('#button-8').on('click',insertAndStay('8',''));
-	$('#button-9').on('click',insertAndStay('9',''));
+	insertInEquation('abc','def');
+	$('#button-0').on('click',insertInEquation('0',''));
+	$('#button-1').on('click',insertInEquation('1',''));
+	$('#button-2').on('click',insertInEquation('2',''));
+	$('#button-3').on('click',insertInEquation('3',''));
+	$('#button-4').on('click',insertInEquation('4',''));
+	$('#button-5').on('click',insertInEquation('5',''));
+	$('#button-6').on('click',insertInEquation('6',''));
+	$('#button-7').on('click',insertInEquation('7',''));
+	$('#button-8').on('click',insertInEquation('8',''));
+	$('#button-9').on('click',insertInEquation('9',''));
 
-	$('#button-dot').on('click',insertAndSwitch('.','','numbers'));
-	$('#button-comma').on('click',insertAndSwitch(',','','numbers'));
+	$('#button-dot').on('click',insertInEquation('.',''));
+	$('#button-comma').on('click',insertInEquation(',',''));
 
-	$('#button-pi').on('click',insertAndSwitch('PI','','numbers'));
-	$('#button-e').on('click',insertAndSwitch('E','','numbers'));
-	$('#button-x').on('click',insertAndStay('x',''));
-	$('#button-y').on('click',insertAndStay('y',''));
+	$('#button-pi').on('click',insertInEquation('PI',''));
+	$('#button-e').on('click',insertInEquation('E',''));
+	$('#button-x').on('click',insertInEquation('x',''));
+	$('#button-y').on('click',insertInEquation('y',''));
 
-	$('#button-floor').on('click',insertAndSwitch('floor(',')','numbers'));
-	$('#button-ceil').on('click',insertAndSwitch('ceil(',')','numbers'));
-	$('#button-round').on('click',insertAndSwitch('round(',')','numbers'));
-	$('#button-ln').on('click',insertAndSwitch('ln(',')','numbers'));
-	$('#button-pow').on('click',insertAndSwitch('pow(',',)','numbers'));
-	$('#button-exp').on('click',insertAndSwitch('exp(',')','numbers'));
-	$('#button-abs').on('click',insertAndSwitch('abs(',')','numbers'));
+	$('#button-floor').on('click',insertInEquation('floor(',')'));
+	$('#button-ceil').on('click',insertInEquation('ceil(',')'));
+	$('#button-round').on('click',insertInEquation('round(',')'));
+	$('#button-ln').on('click',insertInEquation('ln(',')'));
+	$('#button-pow').on('click',insertInEquation('pow(',',)'));
+	$('#button-exp').on('click',insertInEquation('exp(',')'));
+	$('#button-abs').on('click',insertInEquation('abs(',')'));
 
-	$('#button-sin').on('click',insertAndSwitch('sin(',')','numbers'));
-	$('#button-cos').on('click',insertAndSwitch('cos(',')','numbers'));
-	$('#button-tan').on('click',insertAndSwitch('tan(',')','numbers'));
-	$('#button-asin').on('click',insertAndSwitch('asin(',')','numbers'));
-	$('#button-acos').on('click',insertAndSwitch('acos(',')','numbers'));
-	$('#button-atan').on('click',insertAndSwitch('atan(',')','numbers'));
+	$('#button-sin').on('click',insertInEquation('sin(',')'));
+	$('#button-cos').on('click',insertInEquation('cos(',')'));
+	$('#button-tan').on('click',insertInEquation('tan(',')'));
+	$('#button-asin').on('click',insertInEquation('asin(',')'));
+	$('#button-acos').on('click',insertInEquation('acos(',')'));
+	$('#button-atan').on('click',insertInEquation('atan(',')'));
 
-	$('#button-more-than').on('click',insertAndSwitch('>','','numbers'));
-	$('#button-less-than').on('click',insertAndSwitch('<','','numbers'));
-	$('#button-more-equal').on('click',insertAndSwitch('>=','','numbers'));
-	$('#button-less-equal').on('click',insertAndSwitch('<=','','numbers'));
-	$('#button-equal').on('click',insertAndSwitch('=','','numbers'));
-	$('#button-and').on('click',insertAndSwitch('and','','numbers'));
-	$('#button-not').on('click',insertAndSwitch('not','','numbers'));
-	$('#button-xor').on('click',insertAndSwitch('xor','','numbers'));
-	$('#button-or').on('click',insertAndSwitch('or','','numbers'));
+	$('#button-more-than').on('click',insertInEquation('>',''));
+	$('#button-less-than').on('click',insertInEquation('<',''));
+	$('#button-more-equal').on('click',insertInEquation('>=',''));
+	$('#button-less-equal').on('click',insertInEquation('<=',''));
+	$('#button-equal').on('click',insertInEquation('=',''));
+	$('#button-and').on('click',insertInEquation('and',''));
+	$('#button-not').on('click',insertInEquation('not',''));
+	$('#button-xor').on('click',insertInEquation('xor',''));
+	$('#button-or').on('click',insertInEquation('or',''));
 
-	$('#button-add').on('click',insertAndSwitch('+','','numbers'));
-	$('#button-sub').on('click',insertAndSwitch('-','','numbers'));
-	$('#button-mul').on('click',insertAndSwitch('*','','numbers'));
-	$('#button-div').on('click',insertAndSwitch('/','','numbers'));
-	$('#button-paren').on('click',insertAndSwitch('(',')','numbers'));
-	$('#button-curly').on('click',insertAndSwitch('{','}','numbers'));
-	$('#button-square').on('click',insertAndSwitch('[',']','numbers'));
+	$('#button-add').on('click',insertInEquation('+',''));
+	$('#button-sub').on('click',insertInEquation('-',''));
+	$('#button-mul').on('click',insertInEquation('*',''));
+	$('#button-div').on('click',insertInEquation('/',''));
+	$('#button-paren').on('click',insertInEquation('(',')'));
+	$('#button-curly').on('click',insertInEquation('{','}'));
+	$('#button-square').on('click',insertInEquation('[',']'));
 }
 function showEquationEditor(){
 	var $window = $(window);
@@ -433,34 +417,6 @@ $('#btn-view-reset').on('click',function(){
 	showGraph();
 	handleViewReset();
 });
-
-function toggleAnnotation(){
-	$note = $('#canvas-note');
-
-	// If the annotations are hidden:
-	// clear and show the annotation and hide the panning buttons
-	if( $note.hasClass('hide') ){
-		$note[0].width = $note[0].width;
-		$('#btn-pan-up').addClass('hide');
-		$('#btn-pan-down').addClass('hide');
-		$('#btn-pan-left').addClass('hide');
-		$('#btn-pan-right').addClass('hide');
-		$note.removeClass('hide');
-	// Otherwise - hide the annotation and show the panning buttons
-	}else{
-		$note.addClass('hide');
-		$('#btn-pan-up').removeClass('hide');
-		$('#btn-pan-down').removeClass('hide');
-		$('#btn-pan-left').removeClass('hide');
-		$('#btn-pan-right').removeClass('hide');
-		$note.addClass('hide');
-	}
-
-	showGraph();
-}
-$('#btn-annotate').on('click',toggleAnnotation);
-
-setup_overlay('#canvas-note');
 
 $(document).ready(setupKeypad);
 </script>
