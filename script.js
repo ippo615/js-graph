@@ -16,8 +16,6 @@
    }  
 })(jQuery);
 
-
-
 function parseEquation(eq){
 	// Cheap parser to handle sin -> Math.sin conversions
 	eq = eq.toLowerCase()
@@ -66,7 +64,6 @@ function parseEquation(eq){
 	}
 	return func; 
 }
-
 
 function roundToSigFigs(num,nSigFigs){
 	// We can't round 0
@@ -228,7 +225,7 @@ function plotPartial(options){
 	context.putImageData(imageData,xStart,yStart);
 }
 function plotGrid(options){
-	// ------------------------------------ GRID - MAKE OWN FUNCTION/options.canvas --
+
 	var xCanvasSize = options.canvas.width;
 	var yCanvasSize = options.canvas.height;
 
@@ -348,7 +345,6 @@ var graph = {
 //console.info( (parseEquation('y=7*x'))(1,7) )
 //console.info( (parseEquation('y=7+x'))(0,7) )
 //console.info( (parseEquation('3*y=x'))(3,1) )
-
 var graph = {
 	colors: [
 		{r:255,g:0,b:0},
@@ -418,153 +414,10 @@ function graphZoom(opts,scale){
 	opts.yMax = yMid + yZoomed;
 	return opts;
 }
-function updateFunctions(opts){
-	opts.functions = [
-		parseEquation($('#in-equation-1').val()),
-		parseEquation($('#in-equation-2').val()),
-		parseEquation($('#in-equation-3').val()),
-		parseEquation($('#in-equation-4').val())
-	];
-	return opts;
-}
-function handleZoomIn(){
-	graphZoom(graph,0.5);
-	redraw();
-	showGraph();
-}
-function handleZoomOut(){
-	graphZoom(graph,2.0);
-	redraw();
-	showGraph();
-}
-function handlePanUp(){
-	graphPan(graph,0.0,-0.5);
-	redraw();
-}
-function handlePanDown(){
-	graphPan(graph,0.0,0.5);
-	redraw();
-}
-function handlePanLeft(){
-	graphPan(graph,-0.5,0.0);
-	redraw();
-}
-function handlePanRight(){
-	graphPan(graph,0.5,0.0);
-	redraw();
-}
 
-function handlePanDragStart(ev){
-	var $this = $(this);
-
-	// disable browser scrolling
-	ev.gesture.preventDefault();
-
-	// Determine what was originally drawn:
-	graph.xMinDragStart = graph.xMin;
-	graph.yMinDragStart = graph.yMin;
-	graph.xMaxDragStart = graph.xMax;
-	graph.yMaxDragStart = graph.yMax;
-
-	// Remember the old deltas  (we need to substract them)
-	graph.xOldDelta = 0;
-	graph.yOldDelta = 0;
-
-}
-function handlePanDragMove(ev){
-	// disable browser scrolling
-	ev.gesture.preventDefault();
-
-	// Remember the old region we were drawing
-	var xMinOld = graph.xMin;
-	var xMaxOld = graph.xMax;
-	var yMinOld = graph.yMin;
-	var yMaxOld = graph.yMax;
-
-	// Compute the new region we should move to
-	var xShift = ev.gesture.deltaX - graph.xOldDelta;
-	var yShift = ev.gesture.deltaY - graph.yOldDelta;
-
-	// Compute the section that is still visible, and the new regions
-	var xSizeCopy = Math.floor(graph.xCanvasSize - Math.abs(xShift));
-	var xMinCopy = 0;
-	var xMinTarget = Math.floor(Math.abs(xShift));
-	var xMinNew = 0;
-	var xSizeNew = Math.floor(Math.abs(xShift));
-	if( xShift < 0 ){
-		xMinCopy = Math.floor(Math.abs(xShift));
-		xMinTarget = 0;
-		xMinNew = graph.xCanvasSize - xSizeNew;
-	}
-	var ySizeCopy = Math.floor(graph.yCanvasSize - Math.abs(yShift));
-	var yMinCopy = 0;
-	var yMinTarget = Math.floor(Math.abs(yShift));
-	var yMinNew = 0;
-	var ySizeNew = Math.floor(Math.abs(yShift));
-	if( yShift < 0 ){
-		yMinCopy = Math.floor(Math.abs(yShift));
-		yMinTarget = 0;
-		yMinNew = graph.yCanvasSize - ySizeNew;
-	}
-
-	// Copy the section that is still visible
-	var ctx = graph.canvas.getContext('2d');
-	var copy = ctx.getImageData(xMinCopy,yMinCopy,xSizeCopy,ySizeCopy);
-	ctx.putImageData(copy,xMinTarget,yMinTarget);
-
-	// Do the pan
-	graphPanPx(graph,-xShift,-yShift);
-	graph.xOldDelta = ev.gesture.deltaX;
-	graph.yOldDelta = ev.gesture.deltaY;
-
-	// Draw the new regions
-	var canvas = $('#canvas-graph')[0];
-	if( xShift !== 0 ){
-		graph.xStart = xMinNew;
-		graph.xSize = xSizeNew;
-		delete graph.yStart;
-		delete graph.ySize;
-		plotPartial(graph);
-		delete graph.xStart;
-		delete graph.xSize;
-	}
-	if( yShift !== 0 ){
-		graph.yStart = yMinNew;
-		graph.ySize = ySizeNew;
-		delete graph.xStart;
-		delete graph.xSize;
-		plotPartial(graph);
-		delete graph.yStart;
-		delete graph.ySize;
-	}
-
-
-	//redraw();
-}
-function handlePanDragEnd(){
-	plotGrid(graph);
-}
-function handleViewReset(){
-	graph.xMax =  10;
-	graph.xMin = -10;
-	graph.yMax =  10;
-	graph.yMin = -10;
-	redraw();
-}
-function redraw(){
-	// Clear the canvas then redraw everything
-	var canvas = $('#canvas-graph')[0];
-	canvas.width = canvas.width;
-	var grid = $('#canvas-grid')[0];
-	grid.width = canvas.width;
-	grid.height = canvas.height;
-	graph = updateFunctions(graph);
-	plotPartial(graph);
-	plotGrid(graph);
-}
-
-// ---------------------------------------------------- Overlay Module -------
-var setup_overlay = (function(){
+// ------------------------------------------------------- [Module: Overlay ] -
+// Let's you draw (via mouse/touch) on a canvas
+var setupOverlay = (function(){
 
 	// My lazy excuse for jQuery:
 	function $(id){
@@ -713,3 +566,94 @@ var setup_overlay = (function(){
 		});
 	};
 })();
+
+// ---------------------------------------------------- [ Module: Selection ] -
+// Allows working with selections in input/textboxes
+function backspaceSelected(node){
+	var scrollPos = node.scrollTop;
+	if(document.selection){
+		if(!node.focus()){node.focus();}
+		var text = document.selection.createRange().text;
+
+		// If the user has text selected, delete it
+		if( text.length !== 0 ){
+			document.selection.createRange().text = '';
+		}
+		// Otherwise - remove the last character...
+		else{
+		}
+	}else{
+		// Determine the start/end of the selection
+		var start = node.selectionStart;
+		var newStart = start-1;
+		var end = node.selectionEnd;
+		var left = '';
+		var right = node.value.substr(end);
+
+		// If nothing is selected, delete the last character on the left
+		// Otherwise, just delete the selection
+		if( start === end ){
+			newStart = start-1;
+		}else{
+			newStart = start;
+		}
+		left = node.value.substr(0,newStart);
+
+		// Update the element
+		node.value = left+right;
+
+		// Set the right cursor position
+		if( newStart < 0 ){ newStart = 0; }
+		node.selectionStart = newStart;
+		node.selectionEnd = newStart;
+	}
+
+	// scroll to the cursor (only if `node` is a textarea)
+	node.scrollTop = scrollPos;
+	node.focus();
+}
+function wrapSelected(node,leftText,rightText){
+	// node = document.getElementById(id);
+	var scrollPos = node.scrollTop;
+	if(document.selection){
+		// IE is surprisingly efficient in this one...
+		if(!node.focus()){node.focus();}
+		var sel = document.selection.createRange().text;
+		var txt = document.selection.createRange();
+		txt.text = leftText;
+		if(rightText){
+			txt.text += _sel;
+			txt.text += rightText;
+		}
+	}else{
+		
+		// Get the locations of the start/end of the selection
+		// Grab all of the text before the selection
+		// Add the 'left' text to the start of the selection
+		var start = node.selectionStart;
+		var end = node.selectionEnd;
+		var txt = node.value.substr(0,start);
+		txt += leftText;
+
+		// If we're also adding text to the right side
+		// add the selected text PLUS the text we're adding on the right 
+		if( rightText ){
+			txt += node.value.substr(start,end-start);
+			txt += rightText;
+		}
+
+		// Add the rest of the text and set it on the element
+		txt += node.value.substr(end);
+		node.value = txt;
+
+		// Fix the selection so it is the same as it was before
+		node.selectionStart = start + leftText.length;
+		node.selectionEnd = start + leftText.length;
+		if( rightText ){
+			node.selectionEnd = end + leftText.length + rightText.length-1;
+		}
+	}
+	// scroll to the cursor (only if `node` is a textarea)
+	node.scrollTop = scrollPos;
+	node.focus();
+}
