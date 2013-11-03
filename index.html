@@ -419,7 +419,11 @@ function toggleAnnotation(){
 
 function editEquation(id){
 	return function(){
+		// I blur the active equation so that on mobile browsers the keyboard
+		// does NOT appear (since I created my own keyboard for easier input).
+		// However, this causes the caret and selections to be invisible.
 		activeEquation = document.getElementById(id);
+		activeEquation.blur();
 		showEquationEditor();
 	};
 }
