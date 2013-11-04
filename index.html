@@ -558,6 +558,50 @@ function checkForMobileKeyboard(){
 	return isSimple || isComple;
 }
 
+// Examples for inspiration:
+var examples = [];
+// checker board
+examples.push([ 'sin(x)<cos(y)', 'sin(x)>cos(y)' ]);
+// circles
+examples.push([ 'x*x+y*y<=5*5', 'pow(x,2)+pow(y,2)<=3*3' ]);
+// absolute value
+examples.push([ 'y=abs(x)', 'y<abs(x)', 'y>abs(x)' ]);
+// linear functions
+examples.push([ 'y = 2*x+1', 'y = 0.5*x - 1', 'y = x' ]);
+// linear relations
+examples.push([ 'y < 2*x+1', 'y < 0.5*x - 1', 'y < x' ]);
+// hyperbola
+examples.push([ 'y = 1/x', 'x*x/9 - y*y/4 < 1' , 'x*x/9 - y*y/4 = 1' ]);
+// parabola
+examples.push([ 'y = 6*x*x + 4*x + 1', 'x*x = 0.25*y+1' ]);
+// ellipse
+examples.push([ 'pow(x-5,2)+pow(y-5,2)/2<=3*3', 'pow(x+5,2)/2+pow(y+5,2)<=3*3', 'pow(x+5,2)+pow(y-5,2)/2<=3*3', 'pow(x-5,2)/2+pow(y+5,2)<=3*3' ]);
+// rounding
+examples.push([ 'y = floor(x)', 'y = ceil(x)', 'x = floor(y)', 'x < floor(y)']);
+// power
+examples.push([ 'y = pow(x,1)', 'y = pow(x,2)', 'y = pow(x,3)', 'y = pow(x,sin(x))']);
+// inverses
+examples.push([ 'y = sin(x)', 'x = sin(y)+1', 'y = asin(x)']);
+// basic trig
+examples.push([ 'y = sin(x)', 'y = cos(x)', 'y = tan(x)']);
+// inverse trig
+examples.push([ 'y = asin(x)', 'y = acos(x)', 'y = atan(x)' ]);
+// natural log and exp
+examples.push([ 'y = ln(x)', 'x = exp(y)', 'y = exp(x)', 'y = exp(-x)' ]);
+// and
+examples.push([ 'y < x and y < 4' ]);
+// or 
+examples.push([ 'y < -2 or y > 2' ]);
+// xor
+examples.push([ 'y > x xor y < 0' ]);
+// logic
+examples.push([ 'y > x xor y < 0', 'y > x and y < 0', 'y > x or y < 0' ]);
+// venn diagram
+examples.push( ['pow(x-5,2)+pow(y,2)<25 xor pow(x,2)+pow(y,2)<25'] );
+// magnitude shading
+examples.push( ['abs(sin(x*y))','1'] );
+examples.push( ['abs(sin(x*y))','5*sin(x*y)','1'] );
+
 var hasMobileKeyboard = 0;
 var activeEquation = null;
 var graph = {
@@ -631,9 +675,17 @@ onload = function(){
 	$('#btn-pan-left').on('click',handlePanLeft);
 	$('#btn-pan-right').on('click',handlePanRight);
 
+	// Show a random example:
+	var example = examples[Math.floor(Math.random()*examples.length)];
+	$('#in-equation-1').val(example[0] || '');
+	$('#in-equation-2').val(example[1] || '');
+	$('#in-equation-3').val(example[2] || '');
+	$('#in-equation-4').val(example[3] || '');
+
 	// Size the window (and bind resize event)
 	$(window).on('resize',handleResize).resize();
 };
+
 </script>
 </body>
 </html>

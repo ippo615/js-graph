@@ -19,14 +19,14 @@
 function parseEquation(eq){
 	// Cheap parser to handle sin -> Math.sin conversions
 	eq = eq.toLowerCase()
-		.replace(/\s+/g,'')
+		//.replace(/\s+/g,' ')
 		.replace(/{/g,'{')
 		.replace(/}/g,'}')
 		.replace(/\[/g,'[')
 		.replace(/\]/g,']')
-		.replace(/and/g,'&&')
-		.replace(/xor/g,'^')
-		.replace(/or/g,'||')
+		.replace(/\band/g,'&&')
+		.replace(/\bxor/g,'^')
+		.replace(/\bor/g,'||')
 		.replace(/pi/g,'Math.PI')
 		.replace(/\be(?!xp)/g,'Math.E')
 		.replace(/asin|arcsin/g,'Math.asin')
@@ -49,7 +49,7 @@ function parseEquation(eq){
 		.replace(/([^=]+)=+([^=]+)/g,'Math.abs(($1)-($2)) <= pxSize')
 		.replace(/GTE/g,'>=')
 		.replace(/LTE/g,'<=')
-		.replace(/y/g,'-y') // invert for canvas - may want to move this
+		.replace(/y/g,'(-y)') // invert for canvas - may want to move this
 		;
 	
 	// Make function and return it
