@@ -445,6 +445,15 @@ function editEquation(id){
 	};
 }
 
+function onHashChange(){
+	var hash = window.location.hash;
+	if( /^#edit/i.test(hash) ){
+		editEquation(hash.split('/')[1])();
+	}else{
+		showGraph();
+	}
+}
+
 function handleResize(){
 	var $window = $(this);
 	var w = $window.width();
@@ -547,6 +556,7 @@ function setupKeypad(){
 	$('#button-backspace').on('click',function(){
 		backspaceSelected(activeEquation);
 	});
+
 }
 
 function checkForMobileKeyboard(){
@@ -652,10 +662,14 @@ onload = function(){
 	$('#button-operators').on('click',function(){activateKeypad('operators');});
 
 	// Setup changing focus when an equation is clicked
-	$('#in-equation-1').on('focus',editEquation('in-equation-1'));
-	$('#in-equation-2').on('focus',editEquation('in-equation-2'));
-	$('#in-equation-3').on('focus',editEquation('in-equation-3'));
-	$('#in-equation-4').on('focus',editEquation('in-equation-4'));
+	//$('#in-equation-1').on('focus',editEquation('in-equation-1'));
+	//$('#in-equation-2').on('focus',editEquation('in-equation-2'));
+	//$('#in-equation-3').on('focus',editEquation('in-equation-3'));
+	//$('#in-equation-4').on('focus',editEquation('in-equation-4'));
+	$('#in-equation-1').on('focus',function(){window.location.hash='#edit/in-equation-1';});
+	$('#in-equation-2').on('focus',function(){window.location.hash='#edit/in-equation-2';});
+	$('#in-equation-3').on('focus',function(){window.location.hash='#edit/in-equation-3';});
+	$('#in-equation-4').on('focus',function(){window.location.hash='#edit/in-equation-4';});
 
 	// Enable Zooming
 	$('#btn-zoom-in').on('click',handleZoomIn);
@@ -684,6 +698,9 @@ onload = function(){
 
 	// Size the window (and bind resize event)
 	$(window).on('resize',handleResize).resize();
+
+	// Let back return to the view when editting
+	$(window).on('hashchange',onHashChange);
 };
 
 </script>
